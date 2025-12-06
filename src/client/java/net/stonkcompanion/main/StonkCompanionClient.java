@@ -47,7 +47,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		
 		try (FileWriter writer = new FileWriter(top_dir+"/"+current_timestamp+"_checkpoints.json")){
 			Gson gson = new GsonBuilder().create();
-			gson.toJson(checkpoints);
+			gson.toJson(checkpoints, writer);
 		} catch (IOException e) {
 			LOGGER.error("StonkCompanion failed to create the checkpoints json!");
 		}
