@@ -3,6 +3,8 @@
 	"package": "net.stonkcompanion.mixin.client",
 	"compatibilityLevel": "JAVA_17",
 	"client": [
+		"HandledScreenMixin",
+		"ClientPlayNetworkMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
