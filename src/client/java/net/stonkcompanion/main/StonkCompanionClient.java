@@ -41,6 +41,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 		
 		String current_timestamp = ""+Instant.now().getEpochSecond();
 		
+		if (checkpoints.isEmpty()) {
+			return;
+		}
+		
 		try (FileWriter writer = new FileWriter(top_dir+"/"+current_timestamp+"_checkpoints.json")){
 			Gson gson = new GsonBuilder().create();
 			gson.toJson(checkpoints);
@@ -64,6 +68,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			context.getSource().sendFeedback(Text.literal(checkpointing ? "Stopped getting checkpoints." : "Getting checkpoints."));
 	    			checkpointing = !checkpointing;
 	    			if(!checkpointing) {
+	    				writeCheckpoints();
 	    				checkpoints = new JsonObject();
 	    			}
 	    			return 1;
