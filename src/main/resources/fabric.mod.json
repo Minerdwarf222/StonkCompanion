@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "stonkcompanion",
+	"version": "${version}",
+	"name": "Stonk Companion",
+	"description": "Monu mod to help users in the market.",
+	"authors": [
+		"minerdwarf222"
+	],
+	"contact": {
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/stonkcompanion/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+		],
+		"client": [
+			"net.stonkcompanion.main.StonkCompanionClient"
+		]
+	},
+	"mixins": [
+		"stonkcompanion.mixins.json",
+		{
+			"config": "stonkcompanion.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.15.9",
+		"minecraft": "~1.20.4",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
