@@ -36,7 +36,6 @@ public class HandledScreenMixin {
 		if(!screen.getTitle().getString().equals("Barrel")) return;
 		
 		//String containerType = screen.getTitle().getString();
-		//if(!containerType.equals("Barrel")&&!DwarfHighlighterModMenuIntegration.getcheckChestsValue()) return;
 		
 		ScreenHandler container = screen.getScreenHandler();
 		List<Slot> list_of_items = container.slots.stream().filter(slot -> slot.inventory.getClass() != PlayerInventory.class).toList();
@@ -109,21 +108,18 @@ public class HandledScreenMixin {
 		*/
 		
 		// Now we need to store for writing to json file.
-		JsonObject created_checkpoint = new JsonObject();
-		created_checkpoint.addProperty("inventory", StonkCompanionClient.open_barrel_values);
-		
 		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
 		
 		if (StonkCompanionClient.checkpoints.has(barrel_pos)){
 			
 			if (!StonkCompanionClient.checkpoints.getAsJsonObject(barrel_pos).has(""+StonkCompanionClient.open_barrel_time)) {
-				StonkCompanionClient.checkpoints.getAsJsonObject(barrel_pos).add(""+StonkCompanionClient.open_barrel_time, created_checkpoint);
+				StonkCompanionClient.checkpoints.getAsJsonObject(barrel_pos).addProperty(""+StonkCompanionClient.open_barrel_time, StonkCompanionClient.open_barrel_values);
 			}
 			
 		}else {
 			
 			JsonObject _chkpt_values = new JsonObject();
-			_chkpt_values.add(""+StonkCompanionClient.open_barrel_time, created_checkpoint);
+			_chkpt_values.addProperty(""+StonkCompanionClient.open_barrel_time, StonkCompanionClient.open_barrel_values);
 			
 			StonkCompanionClient.checkpoints.add(barrel_pos, _chkpt_values);
 		}
