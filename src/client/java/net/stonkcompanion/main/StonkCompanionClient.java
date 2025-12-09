@@ -24,7 +24,6 @@ import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
 
 public class StonkCompanionClient implements ClientModInitializer{
 
