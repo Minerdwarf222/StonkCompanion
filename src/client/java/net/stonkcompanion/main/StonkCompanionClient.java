@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +29,11 @@ import com.google.gson.JsonObject;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
+
+import net.stonkcompanion.mixin.client.PlayerListHudAccessor;
 
 public class StonkCompanionClient implements ClientModInitializer{
 
@@ -47,6 +52,106 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static String open_barrel_values = "";
 	public static JsonObject checkpoints = new JsonObject();
 	
+	// I need to find a better way to do this. Oh well
+	public static boolean fairprice_detection = false;
+	
+	// Shamelessly stolen from UMM.
+	private static final Pattern shardGetterPattern = Pattern.compile(".*<(?<shard>[-\\w\\d]*)>.*");
+	public static String cachedShard = null;
+	private static long lastUpdateTimeShard = 0;
+	private static final MinecraftClient mc = MinecraftClient.getInstance();
+	
+	public static String getShard() {
+		if (cachedShard != null && lastUpdateTimeShard + 2000 > System.currentTimeMillis()) {
+			return cachedShard;
+		}
+		Text header = ((PlayerListHudAccessor) mc.inGameHud.getPlayerListHud()).getHeader();
+		String shard = "unknown";
+		if (header != null) {
+			String text = header.getString();
+			Matcher matcher = shardGetterPattern.matcher(text);
+			if (matcher.matches()) {
+				shard = matcher.group("shard");
+			}
+		}
+
+		cachedShard = shard;
+		lastUpdateTimeShard = System.currentTimeMillis();
+		return shard;
+	}
+	
+	public static int getCurrencyType(String _s) {
+		
+		String s = _s.toLowerCase();
+		
+		if(s.endsWith("har") || s.endsWith("ar")) {
+			return 3;
+		}else if(s.endsWith("hcs") || s.endsWith("ccs") || s.endsWith("cs")) {
+			return 2;
+		}else if(s.endsWith("hxp") || s.endsWith("cxp") || s.endsWith("xp")) {
+			return 1;
+		}else {
+			return -1;
+		}
+	}
+	
+	
+	public static double givenCurrReturnMult(String _s) {
+		String s = _s.toLowerCase().trim();
+		double mult = -1;
+		
+		if(s.equals("hyperexperience") || s.equals("hyper crystalline shard") || s.equals("hyperchromatic archos ring")) {
+			mult = 64;
+		}else if(s.equals("concentrated experience") || s.equals("compressed crystalline shard") || s.equals("archos ring")) {
+			mult = 1;
+		}else if(s.equals("experience bottle") || s.equals("crystalline shard")) {
+			mult = 1/8;
+		}
+		
+		return mult;
+	}
+	
+	//Given a string of the form "#( )[currency]"
+	//Returns a string that is just the # in the lowest form of that currency.
+	// 1 hxp -> 512 xp for example.
+	public static double convertToBaseUnit(String s) {
+		
+		if (s.length() > 0 && s.contains("per")) {
+			s = s.replace("per", "");
+		}
+		s = s.trim();
+		
+		double amount = -1;
+		String detect_amount = "";
+		String currency = "";
+		
+		for(int i = 0; i < s.length(); i++) {
+			
+			char c = s.charAt(i);
+			
+			if((c >= '0' && c <= '9') || c == '.') {
+				detect_amount += c;
+			}else {
+				currency = s.substring(i).trim();
+				break;
+			}
+		}
+		
+		if(!currency.isEmpty() && detect_amount != "") {
+			
+			amount = Double.parseDouble(detect_amount);
+			
+			if(currency.equals("har") || currency.equals("hxp") || currency.equals("hcs")) {
+				amount = amount*64.0;
+			}else if(currency.equals("xp") || currency.equals("cs")) {
+				amount = amount/8.0;
+			}
+				
+		}
+		
+		return amount;
+	}
+	
 	public void writeCheckpoints() {
 		
 		String current_timestamp = ""+Instant.now().getEpochSecond();
@@ -64,6 +169,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	}
 	
 	//@SuppressWarnings("resource")
+	@SuppressWarnings("resource")
 	@Override
 	public void onInitializeClient() {
 
@@ -157,6 +263,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 		    				writeCheckpoints();
 		    				checkpoints = new JsonObject();
 		    			}
+	    			}else if(given_command.equals("ToggleFairPrice")) {
+	    				context.getSource().sendFeedback(Text.literal(fairprice_detection ? "Stopped detecting FairStonk." : "Detecting FairStonk."));
+	    				fairprice_detection = !fairprice_detection;
 	    			}
 	    			return 1;
 	    		}

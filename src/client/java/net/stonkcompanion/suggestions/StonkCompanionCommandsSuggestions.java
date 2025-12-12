@@ -22,6 +22,9 @@ public class StonkCompanionCommandsSuggestions {
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"ToggleCheckpointing")) {
 			builder.suggest("ToggleCheckpointing");
 		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"ToggleFairPrice")) {
+			builder.suggest("ToggleFairPrice");
+		}
 		
 		return builder.buildFuture();
 	}
