@@ -1,5 +1,7 @@
 package net.stonkcompanion.main;
 
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,10 +19,13 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
+import net.stonkcompanion.suggestions.StonkCompanionCommandsSuggestions;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.mojang.brigadier.arguments.StringArgumentType;
+
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
@@ -58,7 +63,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}
 	}
 	
-	@SuppressWarnings("resource")
+	//@SuppressWarnings("resource")
 	@Override
 	public void onInitializeClient() {
 
@@ -67,18 +72,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 		} catch (IOException e) {
 			LOGGER.error("StonkCompanion failed to create the StonkCompanion config directory!");
 		}
-		
-		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(ClientCommandManager.literal("StonkCompanionToggleCheckpointing")
-	    		.executes(context -> {
-	    			context.getSource().sendFeedback(Text.literal(checkpointing ? "Stopped getting checkpoints." : "Getting checkpoints."));
-	    			checkpointing = !checkpointing;
-	    			if(!checkpointing) {
-	    				writeCheckpoints();
-	    				checkpoints = new JsonObject();
-	    			}
-	    			return 1;
-	    		}
-	    	)));
 		
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 	    	
@@ -149,13 +142,25 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}
 		});
 		
-		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(ClientCommandManager.literal("StonkCompanionToggleCoreprotect")
+	    ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(ClientCommandManager.literal("StonkCompanion")
+		.then(argument("command", StringArgumentType.string())
+				.suggests(StonkCompanionCommandsSuggestions.commandsSUGGESTION_PROVIDER)
 	    		.executes(context -> {
-	    			context.getSource().sendFeedback(Text.literal(change_coreprotect ? "Stopped changing coreprotect." : "Changing coreprotect."));
-	    			change_coreprotect = !change_coreprotect;
+	    			String given_command = StringArgumentType.getString(context, "command");
+	    			if (given_command.equals("ToggleCoreprotect")){
+		    			context.getSource().sendFeedback(Text.literal(change_coreprotect ? "Stopped changing coreprotect." : "Changing coreprotect."));
+		    			change_coreprotect = !change_coreprotect;
+	    			}else if(given_command.equals("ToggleCheckpointing")) {
+		    			context.getSource().sendFeedback(Text.literal(checkpointing ? "Stopped getting checkpoints." : "Getting checkpoints."));
+		    			checkpointing = !checkpointing;
+		    			if(!checkpointing) {
+		    				writeCheckpoints();
+		    				checkpoints = new JsonObject();
+		    			}
+	    			}
 	    			return 1;
 	    		}
-	    )));
+	    	))));
 		
 	}
 
