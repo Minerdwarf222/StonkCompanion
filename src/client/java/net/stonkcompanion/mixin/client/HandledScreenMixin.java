@@ -157,13 +157,18 @@ public class HandledScreenMixin {
         double intraspread_factor = demand_modifier * spread;
         double interpolated_price = bid_price_compressed + intraspread_factor;
         
-        StonkCompanionClient.LOGGER.info("ask price: " + ask_price_compressed);
-        StonkCompanionClient.LOGGER.info("bid price: " + bid_price_compressed);
-        StonkCompanionClient.LOGGER.info("comp curr: " + barrel_compressed_currency);
-        StonkCompanionClient.LOGGER.info("barrel mats: " + barrel_mats);
-		
+        String currency_str = "";
+        
+        if (currency_type == 1) {
+        	currency_str = "cxp";
+        }else if(currency_type == 2) {
+        	currency_str = "ccs";
+        }else if(currency_type == 3) {
+        	currency_str = "ar";
+        }
+
         MinecraftClient mc = MinecraftClient.getInstance();
-        String fairprice_msg = String.format("FairStonk is %.1f.", interpolated_price);
+        String fairprice_msg = String.format("FairStonk is %.1f %s.", interpolated_price, currency_str);
         mc.player.sendMessage(Text.literal(fairprice_msg));
         
 	}
