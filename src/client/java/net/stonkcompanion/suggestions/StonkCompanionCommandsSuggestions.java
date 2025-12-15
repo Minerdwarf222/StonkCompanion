@@ -16,14 +16,20 @@ public class StonkCompanionCommandsSuggestions {
 	public static CompletableFuture<Suggestions> getCommandsSuggestions(CommandContext<FabricClientCommandSource> context,
 			SuggestionsBuilder builder) throws CommandSyntaxException {
 		
-		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"ToggleCoreprotect")) {
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglecoreprotect")) {
 			builder.suggest("ToggleCoreprotect");
 		}
-		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"ToggleCheckpointing")) {
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglecheckpointing")) {
 			builder.suggest("ToggleCheckpointing");
 		}
-		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"ToggleFairPrice")) {
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglefairprice")) {
 			builder.suggest("ToggleFairPrice");
+		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglemistradecheck")) {
+			builder.suggest("ToggleMistradeCheck");
+		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"mistradecheck")) {
+			builder.suggest("MistradeCheck");
 		}
 		
 		return builder.buildFuture();

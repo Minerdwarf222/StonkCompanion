@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,6 +61,12 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static String cachedShard = null;
 	private static long lastUpdateTimeShard = 0;
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
+	
+	// Mistrade checking :fire:
+	public static boolean is_mistrade_checking = false;
+	public static HashMap<String, HashMap<String, Integer>> barrel_transactions = new HashMap<>();
+	public static HashMap<String, Integer> barrel_timeout = new HashMap<>();
+	public static HashMap<String, Barrel> barrel_prices = new HashMap<>();
 	
 	public static String getShard() {
 		if (cachedShard != null && lastUpdateTimeShard + 2000 > System.currentTimeMillis()) {
@@ -168,7 +175,161 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}
 	}
 	
-	//@SuppressWarnings("resource")
+	/*
+	 * As the name implies, this function is to go through every barrel in barrel_transactions and try to detect if any were mistrades.	
+	 */
+	private void mistradeCheck() {
+		barrel_timeout.clear();
+		
+		LOGGER.info("Checking Mistrades!");
+		
+		for(String barrel_pos : barrel_transactions.keySet()) {
+			LOGGER.info(barrel_pos +"'s changes:");
+			for(String traded_item : barrel_transactions.get(barrel_pos).keySet()) {
+				int item_qty = barrel_transactions.get(barrel_pos).get(traded_item);
+				LOGGER.info(traded_item + " " + item_qty);
+			}
+			LOGGER.info("Barrel's barrel info: ");
+			if(!barrel_prices.containsKey(barrel_pos)) {
+				LOGGER.info("Doesn't Exist.");
+			}else {
+				Barrel traded_barrel = barrel_prices.get(barrel_pos);
+				LOGGER.info(traded_barrel.coords);
+				LOGGER.info(traded_barrel.label);
+				LOGGER.info(traded_barrel.ask_price);
+				LOGGER.info(traded_barrel.bid_price);
+				LOGGER.info("" + traded_barrel.compressed_ask_price);
+				LOGGER.info("" + traded_barrel.compressed_bid_price);
+				LOGGER.info("" + traded_barrel.currency_type);
+			}
+			
+		}
+		
+		for(String barrel_pos : barrel_transactions.keySet()) {
+			if (!barrel_prices.containsKey(barrel_pos)) {
+				continue;
+			}
+			
+			// So we should have a map of items to their total qtyies traded in this barrel
+			// and a map of barrel position to all the needed price info.
+			// Time to check if it is a mistrade or not.
+			
+			Barrel traded_barrel = barrel_prices.get(barrel_pos);
+			
+			// TODO: Clean up currency conversions.
+			// TODO: Look into maybe checking what is being traded and not just assuming only the correct item is being traded.
+			double r1_compressed = 0.0;
+			double r2_compressed = 0.0;
+			double r3_compressed = 0.0;
+			int other_items = 0;
+			
+			for (String traded_item : barrel_transactions.get(barrel_pos).keySet()) {
+								
+				int item_qty = barrel_transactions.get(barrel_pos).get(traded_item);
+				
+				String traded_item_lc = traded_item.toLowerCase();
+				
+				// EEEEEEE
+				if(traded_item_lc.equals("hyperexperience")) {
+					r1_compressed += 64*item_qty;
+				}else if(traded_item_lc.equals("concentrated_experience")) {
+					r1_compressed += item_qty;
+				}else if(traded_item_lc.equals("experience bottle")) {
+					r1_compressed += item_qty/8;
+				}else if(traded_item_lc.equals("hyper crystalline shard")) {
+					r2_compressed += 64*item_qty;
+				}else if(traded_item_lc.equals("compressed crystalline shard")) {
+					r2_compressed += item_qty;
+				}else if(traded_item_lc.equals("crystalline shard")) {
+					r2_compressed += item_qty/8;
+				}else if(traded_item_lc.equals("hyperchromatic archos ring")) {
+					r3_compressed += 64*item_qty;
+				}else if(traded_item_lc.equals("archos ring")) {
+					r3_compressed += item_qty;
+				}else {
+					other_items += item_qty;
+				}
+			}
+			
+			// Okay we have all our ducks in a row. Now to verify if this trade was correct.
+			double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
+			double actual_compressed = 0.0;
+			boolean valid_transaction = false;
+			boolean wrong_currency = false;
+			
+			if(traded_barrel.currency_type == 1) {
+				valid_transaction = r1_compressed == expected_compressed;
+				actual_compressed = r1_compressed;
+				
+				if(r2_compressed != 0.0 || r3_compressed != 0.0) {
+					wrong_currency = true;
+				}
+			}
+			
+			if(traded_barrel.currency_type == 2) {
+				valid_transaction = r2_compressed == expected_compressed;
+				actual_compressed = r2_compressed;
+				
+				if(r1_compressed != 0.0 || r3_compressed != 0.0) {
+					wrong_currency = true;
+				}
+			}
+			
+			if(traded_barrel.currency_type == 3) {
+				valid_transaction = r3_compressed == expected_compressed;
+				actual_compressed = r3_compressed;
+				
+				if(r2_compressed != 0.0 || r1_compressed != 0.0) {
+					wrong_currency = true;
+				}
+			}
+			
+			/*
+			 * Here is where hell resides. Pretty printing the mistrades.
+			 * Barrel Name (Barrel Coordinates)
+			 * Buy: price in compressed (price as written on barrel)
+			 * Sell: price in compressed (price as written on barrel)
+			 * Sold/Bought: number of mats
+			 * Paid/Took: Net Currency
+			 * Unit Price: (net currency / number of mats)
+			 * Correction amount: (+/- currency to resolve mistrade.)
+			 * (If wrong_currency) Wrong Currency was used!
+			 */
+			
+			if(valid_transaction) continue;
+			
+	        String currency_str = "";
+	        
+	        if (traded_barrel.currency_type == 1) {
+	        	currency_str = "cxp";
+	        }else if(traded_barrel.currency_type == 2) {
+	        	currency_str = "ccs";
+	        }else if(traded_barrel.currency_type == 3) {
+	        	currency_str = "ar";
+	        }
+	        
+	        double currency_delta = expected_compressed - actual_compressed;
+	        
+	        MinecraftClient mc = MinecraftClient.getInstance();
+	                
+	        mc.player.sendMessage(Text.literal("---------------"));
+	        mc.player.sendMessage(Text.literal("%s (%s)".formatted(traded_barrel.label, barrel_pos)));
+	        mc.player.sendMessage(Text.literal("Buy: %.3f %s (%s)".formatted(traded_barrel.compressed_ask_price, currency_str, traded_barrel.ask_price)));
+	        mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
+	        mc.player.sendMessage(Text.literal("%s: %d".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
+	        mc.player.sendMessage(Text.literal("%s: %.3f %s".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str)));
+	        mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (double)other_items)))));
+	        mc.player.sendMessage(Text.literal("Correction amount: %.3f %s".formatted(currency_delta, currency_str)));
+	        if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
+	        mc.player.sendMessage(Text.literal("---------------"));
+			
+		}
+		
+		barrel_transactions.clear();
+		barrel_prices.clear();
+		
+	}
+	
 	@SuppressWarnings("resource")
 	@Override
 	public void onInitializeClient() {
@@ -176,6 +337,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		try {
 			Files.createDirectory(FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion"));
 		} catch (IOException e) {
+			
 			LOGGER.error("StonkCompanion failed to create the StonkCompanion config directory!");
 		}
 		
@@ -266,6 +428,12 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			}else if(given_command.equals("ToggleFairPrice")) {
 	    				context.getSource().sendFeedback(Text.literal(fairprice_detection ? "Stopped detecting FairStonk." : "Detecting FairStonk."));
 	    				fairprice_detection = !fairprice_detection;
+	    			}else if(given_command.equals("ToggleMistradeCheck")) {
+	    				context.getSource().sendFeedback(Text.literal(is_mistrade_checking ? "Stopped detecting mistrades." : "Detecting mistrades."));
+	    				is_mistrade_checking = !is_mistrade_checking;	
+	    			}else if(given_command.equals("MistradeCheck")) {
+	    				context.getSource().sendFeedback(Text.literal("Checking transactions."));
+	    				mistradeCheck();
 	    			}
 	    			return 1;
 	    		}
