@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.text.Text;
@@ -63,6 +64,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
 	
 	// Mistrade checking :fire:
+	private static int transaction_lifetime = 15*60*20; // Measured in ticks. Thus 15 mins is 15 mins * 60 seconds per minute * 20 ticks per second.
 	public static boolean is_mistrade_checking = false;
 	public static HashMap<String, HashMap<String, Integer>> barrel_transactions = new HashMap<>();
 	public static HashMap<String, Integer> barrel_timeout = new HashMap<>();
@@ -179,7 +181,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	 * As the name implies, this function is to go through every barrel in barrel_transactions and try to detect if any were mistrades.	
 	 */
 	private void mistradeCheck() {
-		barrel_timeout.clear();
+		// barrel_timeout.clear();
 		
 		LOGGER.info("Checking Mistrades!");
 		
@@ -296,7 +298,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 			 * (If wrong_currency) Wrong Currency was used!
 			 */
 			
-			if(valid_transaction) continue;
+			// if(valid_transaction) continue;
 			
 	        String currency_str = "";
 	        
@@ -325,12 +327,12 @@ public class StonkCompanionClient implements ClientModInitializer{
 			
 		}
 		
-		barrel_transactions.clear();
-		barrel_prices.clear();
+		// barrel_transactions.clear();
+		// barrel_prices.clear();
 		
 	}
 	
-	@SuppressWarnings("resource")
+	// @SuppressWarnings("resource")
 	@Override
 	public void onInitializeClient() {
 
@@ -340,6 +342,21 @@ public class StonkCompanionClient implements ClientModInitializer{
 			
 			LOGGER.error("StonkCompanion failed to create the StonkCompanion config directory!");
 		}
+		
+		ClientTickEvents.START_CLIENT_TICK.register((client) -> {
+			
+			// Every tick increase the lifetime of every barrel and then check if it has exceeded it's lifetime.
+			for (String pos : barrel_timeout.keySet()) {
+				barrel_timeout.put(pos, barrel_timeout.get(pos)+1);
+				if(barrel_timeout.get(pos) >= transaction_lifetime) {
+					barrel_transactions.remove(pos);
+					barrel_prices.remove(pos);
+				}
+			}
+			
+			barrel_timeout.entrySet().removeIf(entry -> (transaction_lifetime <= entry.getValue()));
+			
+		});
 		
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 	    	

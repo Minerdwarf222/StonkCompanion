@@ -114,6 +114,11 @@ public class HandledScreenMixin {
 			return;
 		}
 		
+		// Storing this here for the moment.
+		if(StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) {
+			StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);
+		}
+		
 		if(action_type == SlotActionType.PICKUP_ALL) {
 			
 			Item player_item = player_itemstk.getItem();
@@ -515,6 +520,11 @@ public class HandledScreenMixin {
 		
 	}
 	
+	// The intent of this is to just be a one stop function for all the click events instead of having like 15 of the same very similar things.
+	private void onClickInjectHelper(Slot took_item, Slot put_item) {
+		
+	}
+	
 	private void stonkCompanionOnCloseCheck(HandledScreen<?> screen) 
 	{
 		
@@ -550,11 +560,7 @@ public class HandledScreenMixin {
 		int barrely = StonkCompanionClient.last_right_click.getY();
 		int barrelz = StonkCompanionClient.last_right_click.getZ();	
 		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
-			
-		if(StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) {
-			StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);
-		}
-		
+				
 		int currency_type = -1;
 		String label = "";
 		String ask_price = "";
