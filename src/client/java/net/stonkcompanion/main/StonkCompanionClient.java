@@ -5,6 +5,7 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.arg
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.loader.api.FabricLoader;
@@ -174,6 +176,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		try (FileWriter writer = new FileWriter(top_dir+"/"+current_timestamp+"_checkpoints.json")){
 			Gson gson = new GsonBuilder().create();
 			gson.toJson(checkpoints, writer);
+			checkpoints = new JsonObject();
 		} catch (IOException e) {
 			LOGGER.error("StonkCompanion failed to create the checkpoints json!");
 		}
@@ -388,6 +391,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}
 		}
 		
+		ClientLifecycleEvents.CLIENT_STOPPING.register((client) -> {
+			writeCheckpoints();
+		});
+		
 		ClientTickEvents.START_CLIENT_TICK.register((client) -> {
 			
 			// Every tick increase the lifetime of every barrel and then check if it has exceeded it's lifetime.
@@ -485,7 +492,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 		    			checkpointing = !checkpointing;
 		    			if(!checkpointing) {
 		    				writeCheckpoints();
-		    				checkpoints = new JsonObject();
 		    			}
 	    			}else if(given_command.equals("ToggleFairPrice")) {
 	    				context.getSource().sendFeedback(Text.literal(fairprice_detection ? "[StonkCompanion] Stopped detecting FairStonk." : "[StonkCompanion] Detecting FairStonk."));
