@@ -44,7 +44,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	
 	private static String top_dir = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion").toString();
-	private boolean change_coreprotect = false;
+	
+	// Coreprotect changes. Like changing the hovertext literal to the monu item name.
+	private boolean change_coreprotect = true;
 
 	// Checkpoint vars. Probs move elsewhere later.
 	public static boolean checkpointing = false;
@@ -180,7 +182,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	/*
 	 * As the name implies, this function is to go through every barrel in barrel_transactions and try to detect if any were mistrades.	
 	 */
-	public static void mistradeCheck(String barrel_pos) {
+	public static void mistradeCheck(String barrel_pos, boolean hide_valid) {
 		
 		if (!barrel_prices.containsKey(barrel_pos)) {
 			return;
@@ -276,7 +278,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		 * (If wrong_currency) Wrong Currency was used!
 		 */
 			
-		// if(valid_transaction) continue;
+		if(valid_transaction && hide_valid) return;
 		
 	    String currency_str = "";
 	        
@@ -306,8 +308,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    }
 	        
 	    MinecraftClient mc = MinecraftClient.getInstance();
-	                
-	    mc.player.sendMessage(Text.literal("---------------"));
+	    									
+	    mc.player.sendMessage(Text.literal("--[StonkCompanion]--"));
 	    mc.player.sendMessage(Text.literal("%s (%s)".formatted(traded_barrel.label, barrel_pos)));
 	    mc.player.sendMessage(Text.literal("Buy: %.3f %s (%s)".formatted(traded_barrel.compressed_ask_price, currency_str, traded_barrel.ask_price)));
 	    mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
@@ -318,7 +320,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %d mats".formatted(mats_delta)));
 	    mc.player.sendMessage(Text.literal("Time since last log: %ds".formatted(barrel_timeout.get(barrel_pos)/20)));
 	    if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
-	    mc.player.sendMessage(Text.literal("---------------"));
+	    mc.player.sendMessage(Text.literal("--------------------"));
 	    
 	    if(other_items == 0 && currency_delta == 0 && !wrong_currency) {
 			barrel_transactions.remove(barrel_pos);
@@ -355,7 +357,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}*/
 		
 		for(String barrel_pos : barrel_transactions.keySet()) {
-			mistradeCheck(barrel_pos);
+			mistradeCheck(barrel_pos, true);
 		}
 		
 	}
@@ -461,23 +463,23 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    		.executes(context -> {
 	    			String given_command = StringArgumentType.getString(context, "command");
 	    			if (given_command.equals("ToggleCoreprotect")){
-		    			context.getSource().sendFeedback(Text.literal(change_coreprotect ? "Stopped changing coreprotect." : "Changing coreprotect."));
+		    			context.getSource().sendFeedback(Text.literal(change_coreprotect ? "[StonkCompanion] Stopped changing coreprotect." : "[StonkCompanion] Changing coreprotect."));
 		    			change_coreprotect = !change_coreprotect;
 	    			}else if(given_command.equals("ToggleCheckpointing")) {
-		    			context.getSource().sendFeedback(Text.literal(checkpointing ? "Stopped getting checkpoints." : "Getting checkpoints."));
+		    			context.getSource().sendFeedback(Text.literal(checkpointing ? "[StonkCompanion] Stopped getting checkpoints." : "[StonkCompanion] Getting checkpoints."));
 		    			checkpointing = !checkpointing;
 		    			if(!checkpointing) {
 		    				writeCheckpoints();
 		    				checkpoints = new JsonObject();
 		    			}
 	    			}else if(given_command.equals("ToggleFairPrice")) {
-	    				context.getSource().sendFeedback(Text.literal(fairprice_detection ? "Stopped detecting FairStonk." : "Detecting FairStonk."));
+	    				context.getSource().sendFeedback(Text.literal(fairprice_detection ? "[StonkCompanion] Stopped detecting FairStonk." : "[StonkCompanion] Detecting FairStonk."));
 	    				fairprice_detection = !fairprice_detection;
 	    			}else if(given_command.equals("ToggleMistradeCheck")) {
-	    				context.getSource().sendFeedback(Text.literal(is_mistrade_checking ? "Stopped detecting mistrades." : "Detecting mistrades."));
+	    				context.getSource().sendFeedback(Text.literal(is_mistrade_checking ? "[StonkCompanion] Stopped detecting mistrades." : "[StonkCompanion] Detecting mistrades."));
 	    				is_mistrade_checking = !is_mistrade_checking;	
 	    			}else if(given_command.equals("MistradeCheck")) {
-	    				context.getSource().sendFeedback(Text.literal("Checking transactions."));
+	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Checking transactions."));
 	    				mistradeCheck();
 	    			}
 	    			return 1;

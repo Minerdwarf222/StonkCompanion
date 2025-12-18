@@ -465,6 +465,11 @@ public class HandledScreenMixin {
 							bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_bid+8));
 						}
 					}
+					
+					// Break if we have found the sign. Assuming the first found correctly formatted sign is the correct sign. If it isn't. User error.
+					if (currency_type != -1 && ask_price_compressed != -1 && bid_price_compressed != -1) {
+						break;
+					}
 				}
 			}
 		}
@@ -482,7 +487,7 @@ public class HandledScreenMixin {
 			StonkCompanionClient.barrel_prices.put(barrel_pos, new Barrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
 		}
 		
-		StonkCompanionClient.mistradeCheck(barrel_pos);
+		StonkCompanionClient.mistradeCheck(barrel_pos, false);
 	}
 	
 	private void detectFairPrice(List<Slot> items) {
@@ -598,7 +603,14 @@ public class HandledScreenMixin {
         }
 
         MinecraftClient mc = MinecraftClient.getInstance();
-        String fairprice_msg = String.format("FairStonk is %.1f %s.", interpolated_price, currency_str);
+        String fairprice_msg = String.format("[StonkCompanion] FairStonk is %.1f %s.", interpolated_price, currency_str);
+        
+        if(interpolated_price <= bid_price_compressed || mats_in_currency < 1) {
+        	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
+        }else if(interpolated_price >= ask_price_compressed) {
+        	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
+        }
+        
         mc.player.sendMessage(Text.literal(fairprice_msg));
         
 	}
@@ -678,6 +690,9 @@ public class HandledScreenMixin {
 			
 			StonkCompanionClient.checkpoints.add(barrel_pos, _chkpt_values);
 		}
+		
+        MinecraftClient mc = MinecraftClient.getInstance();
+        mc.player.sendMessage(Text.literal("[StonkCompanion] Grabbed checkpoint for %s.".formatted(barrel_pos)));
 		
 		StonkCompanionClient.open_barrel_time = 0;
 		StonkCompanionClient.open_barrel_values = "";
