@@ -96,8 +96,8 @@ public class HandledScreenMixin {
 		
 		if (player_itemstk == null) return;
 		
-		String player_item_str = (player_itemstk != null) ? player_itemstk.getTranslationKey() : "None";
-		String player_inv = (slot.inventory.getClass() == PlayerInventory.class) ? "Player" : "Not Player";
+		// String player_item_str = (player_itemstk != null) ? player_itemstk.getTranslationKey() : "None";
+		// String player_inv = (slot.inventory.getClass() == PlayerInventory.class) ? "Player" : "Not Player";
 		
 		boolean is_player_inv = slot.inventory.getClass() == PlayerInventory.class;
 		
@@ -107,16 +107,11 @@ public class HandledScreenMixin {
 		
 		if (list_of_items.size() != 27) return;
 		
-		StonkCompanionClient.LOGGER.info(player_inv + " slot. Slot ID: " + slot_id + " Button: " + button + " Action Type: " + action_type.name() + " Player Cursor: " + player_item_str);
+		// StonkCompanionClient.LOGGER.info(player_inv + " slot. Slot ID: " + slot_id + " Button: " + button + " Action Type: " + action_type.name() + " Player Cursor: " + player_item_str);
 
 		// Ignore the action if it is just two empty stacks.
 		if (player_itemstk.isEmpty() && !slot.hasStack()) {
 			return;
-		}
-		
-		// Storing this here for the moment.
-		if(StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) {
-			StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);
 		}
 		
 		if(action_type == SlotActionType.PICKUP_ALL) {
@@ -125,13 +120,7 @@ public class HandledScreenMixin {
 			int player_itemstk_qty = player_itemstk.getCount();
 			int item_qty_taken = 0;
 			
-			String player_item_name = "";
-			
-			if(player_itemstk.getNbt() == null || !player_itemstk.getNbt().contains("Monumenta")) {
-				player_item_name = player_itemstk.getItem().getName().getString();
-			}else {
-				player_item_name = player_itemstk.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-			}
+			String player_item_name = getItemName(player_itemstk);
 			
 			for(int i = 0; i < 27; i++) {
 				if(player_itemstk_qty >= player_item.getMaxCount())	break;		
@@ -149,11 +138,7 @@ public class HandledScreenMixin {
 				}
 			}
 			
-			StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-			StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) - item_qty_taken);
-			
-			StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + player_item.getName().getString() + " from the barrel.");
-			
+			onClickInjectHelper(barrel_pos, player_item_name, item_qty_taken, true);
 		}else if(action_type == SlotActionType.QUICK_MOVE) {
 			
 			if(is_player_inv) {
@@ -162,13 +147,7 @@ public class HandledScreenMixin {
 				int active_slot_itemstk_qty = active_slot.getCount();
 				int item_qty_put = 0;
 				
-				String active_slot_item_name = "";
-				
-				if(active_slot.getNbt() == null || !active_slot.getNbt().contains("Monumenta")) {
-					active_slot_item_name = active_slot.getItem().getName().getString();
-				}else {
-					active_slot_item_name = active_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-				}
+				String active_slot_item_name = getItemName(active_slot);
 				
 				for(Slot _slot : list_of_items) {
 					if(active_slot_itemstk_qty <= 0) break;		
@@ -189,24 +168,14 @@ public class HandledScreenMixin {
 					}
 				}
 				
-				StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-				StonkCompanionClient.barrel_transactions.get(barrel_pos).put(active_slot_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(active_slot_item_name, 0) + item_qty_put);
-				
-				StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + active_slot_item.getName().getString() + " into the barrel.");
-				
+				onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_put, false);				
 			}else {
 				
 				Item active_slot_item = active_slot.getItem();
 				int active_slot_itemstk_qty = active_slot.getCount();
 				int item_qty_taken = 0;
 				
-				String active_slot_item_name = "";
-				
-				if(active_slot.getNbt() == null || !active_slot.getNbt().contains("Monumenta")) {
-					active_slot_item_name = active_slot.getItem().getName().getString();
-				}else {
-					active_slot_item_name = active_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-				}
+				String active_slot_item_name = getItemName(active_slot);
 				
 				for(Slot _slot : list_of_player_items) {
 					if(active_slot_itemstk_qty <= 0) break;		
@@ -227,11 +196,7 @@ public class HandledScreenMixin {
 					}
 				}
 				
-				StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-				StonkCompanionClient.barrel_transactions.get(barrel_pos).put(active_slot_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(active_slot_item_name, 0) - item_qty_taken);
-				
-				StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + active_slot_item.getName().getString() + " from the barrel.");
-				
+				onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);				
 			}
 			
 		}else if(action_type == SlotActionType.PICKUP && !is_player_inv) {
@@ -249,71 +214,31 @@ public class HandledScreenMixin {
 				
 				Item active_slot_item = active_slot.getItem();
 				int active_slot_itemstk_qty = active_slot.getCount();
-				Item player_item = player_itemstk.getItem();
 				int player_itemstk_qty = player_itemstk.getCount();
 				
 				if (player_itemstk.isEmpty()) {
 					
 					int item_qty_taken = active_slot_itemstk_qty;
 					
-					String active_slot_item_name = "";
+					String active_slot_item_name = getItemName(active_slot);
 					
-					if(active_slot.getNbt() == null || !active_slot.getNbt().contains("Monumenta")) {
-						active_slot_item_name = active_slot.getItem().getName().getString();
-					}else {
-						active_slot_item_name = active_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(active_slot_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(active_slot_item_name, 0) - item_qty_taken);
-					
-					StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + active_slot_item.getName().getString() + " from the barrel.");
-					
+					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);				
 				}else if(active_slot.isEmpty()) {
 					
 					int item_qty_put = player_itemstk_qty;
 
-					String player_item_name = "";
+					String player_item_name = getItemName(player_itemstk);
 					
-					if(player_itemstk.getNbt() == null || !player_itemstk.getNbt().contains("Monumenta")) {
-						player_item_name = player_itemstk.getItem().getName().getString();
-					}else {
-						player_item_name = player_itemstk.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) + item_qty_put);
-					
-					StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + player_item.getName().getString() + " into the barrel.");
-					
+					onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);					
 				}else if(!player_itemstk.getItem().equals(active_slot.getItem())) {
 
 					int item_qty_taken = active_slot_itemstk_qty;
 					int item_qty_put = player_itemstk_qty;
 					
-					String active_slot_item_name = "";
+					String active_slot_item_name = getItemName(active_slot);
+					String player_item_name = getItemName(player_itemstk);
 					
-					if(active_slot.getNbt() == null || !active_slot.getNbt().contains("Monumenta")) {
-						active_slot_item_name = active_slot.getItem().getName().getString();
-					}else {
-						active_slot_item_name = active_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					String player_item_name = "";
-					
-					if(player_itemstk.getNbt() == null || !player_itemstk.getNbt().contains("Monumenta")) {
-						player_item_name = player_itemstk.getItem().getName().getString();
-					}else {
-						player_item_name = player_itemstk.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) + item_qty_put);
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(active_slot_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(active_slot_item_name, 0) - item_qty_taken);
-					
-					StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + active_slot_item.getName().getString() + " from the barrel.");
-					StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + player_item.getName().getString() + " into the barrel.");
-					
+					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, player_item_name, item_qty_put);					
 				}else {
 					
 					if(active_slot_item.getMaxCount() == active_slot_itemstk_qty) {
@@ -322,36 +247,16 @@ public class HandledScreenMixin {
 						
 						int item_qty_put = player_itemstk_qty;
 											
-						String player_item_name = "";
+						String player_item_name = getItemName(player_itemstk);
 						
-						if(player_itemstk.getNbt() == null || !player_itemstk.getNbt().contains("Monumenta")) {
-							player_item_name = player_itemstk.getItem().getName().getString();
-						}else {
-							player_item_name = player_itemstk.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-						}
-						
-						StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-						StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) + item_qty_put);
-						
-						StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + player_item.getName().getString() + " into the barrel.");
-						
+						onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);						
 					}else if(active_slot_itemstk_qty + player_itemstk_qty > active_slot_item.getMaxCount()){
 						
 						int item_qty_put = active_slot_item.getMaxCount() - active_slot_itemstk_qty;
 
-						String player_item_name = "";
+						String player_item_name = getItemName(player_itemstk);
 						
-						if(player_itemstk.getNbt() == null || !player_itemstk.getNbt().contains("Monumenta")) {
-							player_item_name = player_itemstk.getItem().getName().getString();
-						}else {
-							player_item_name = player_itemstk.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-						}
-						
-						StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-						StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) + item_qty_put);
-						
-						StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + player_item.getName().getString() + " into the barrel.");
-						
+						onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);						
 					}
 					
 				}
@@ -365,72 +270,31 @@ public class HandledScreenMixin {
 				
 				Item active_slot_item = active_slot.getItem();
 				int active_slot_itemstk_qty = active_slot.getCount();
-				Item player_item = player_itemstk.getItem();
 				int player_itemstk_qty = player_itemstk.getCount();
 				
 				if (player_itemstk.isEmpty()) {
 					
 					int item_qty_taken = (int)(Math.ceil(active_slot_itemstk_qty/2.0));
 					
-					String active_slot_item_name = "";
+					String active_slot_item_name = getItemName(active_slot);
 					
-					if(active_slot.getNbt() == null || !active_slot.getNbt().contains("Monumenta")) {
-						active_slot_item_name = active_slot.getItem().getName().getString();
-					}else {
-						active_slot_item_name = active_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(active_slot_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(active_slot_item_name, 0) - item_qty_taken);
-					
-					
-					StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + active_slot_item.getName().getString() + " from the barrel.");
-					
+					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);					
 				}else if(active_slot.isEmpty()) {
 					
 					int item_qty_put = 1;
 					
-					String player_item_name = "";
+					String player_item_name = getItemName(player_itemstk);
 					
-					if(player_itemstk.getNbt() == null || !player_itemstk.getNbt().contains("Monumenta")) {
-						player_item_name = player_itemstk.getItem().getName().getString();
-					}else {
-						player_item_name = player_itemstk.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) + item_qty_put);
-					
-					StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + player_item.getName().getString() + " into the barrel.");
-					
+					onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);					
 				}else if(!player_itemstk.getItem().equals(active_slot.getItem())) {
 					
 					int item_qty_taken = active_slot_itemstk_qty;
 					int item_qty_put = player_itemstk_qty;
 					
-					String active_slot_item_name = "";
+					String active_slot_item_name = getItemName(active_slot);	
+					String player_item_name = getItemName(player_itemstk);
 					
-					if(active_slot.getNbt() == null || !active_slot.getNbt().contains("Monumenta")) {
-						active_slot_item_name = active_slot.getItem().getName().getString();
-					}else {
-						active_slot_item_name = active_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					String player_item_name = "";
-					
-					if(player_itemstk.getNbt() == null || !player_itemstk.getNbt().contains("Monumenta")) {
-						player_item_name = player_itemstk.getItem().getName().getString();
-					}else {
-						player_item_name = player_itemstk.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) + item_qty_put);
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(active_slot_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(active_slot_item_name, 0) - item_qty_taken);
-					
-					StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + active_slot_item.getName().getString() + " from the barrel.");
-					StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + player_item.getName().getString() + " into the barrel.");
-					
+					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, player_item_name, item_qty_put);					
 				}else {
 				
 					if(active_slot_item.getMaxCount() == active_slot_itemstk_qty) {
@@ -439,19 +303,9 @@ public class HandledScreenMixin {
 					
 					int item_qty_put = 1;
 					
-					String player_item_name = "";
+					String player_item_name = getItemName(player_itemstk);
 					
-					if(player_itemstk.getNbt() == null || !player_itemstk.getNbt().contains("Monumenta")) {
-						player_item_name = player_itemstk.getItem().getName().getString();
-					}else {
-						player_item_name = player_itemstk.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-					}
-					
-					StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-					StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) + item_qty_put);
-
-					StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + player_item.getName().getString() + " into the barrel.");
-					
+					onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);					
 				}
 				
 			}
@@ -461,10 +315,8 @@ public class HandledScreenMixin {
 			
 			// Offhand swap is not considered atm.
 			if (button >= 0 && button <= 8) {
-				Item active_slot_item = active_slot.getItem();
 				int active_slot_itemstk_qty = active_slot.getCount();
 				ItemStack hotbar_slot = container.slots.get(54 + button).getStack();
-				Item player_item = hotbar_slot.getItem();
 				int player_itemstk_qty = hotbar_slot.getCount();
 				int item_qty_taken = active_slot_itemstk_qty;
 				int item_qty_put = player_itemstk_qty;
@@ -472,56 +324,50 @@ public class HandledScreenMixin {
 				// button 0 = hotbar slot 1 = slot 54
 				// button 8 = hotbar slot 8 = slot 62
 				
-				String active_slot_item_name = "";
+				String active_slot_item_name = getItemName(active_slot);
+				String player_item_name = getItemName(hotbar_slot);
 				
-				if(active_slot.getNbt() == null || !active_slot.getNbt().contains("Monumenta")) {
-					active_slot_item_name = active_slot.getItem().getName().getString();
-				}else {
-					active_slot_item_name = active_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-				}
-				
-				String player_item_name = "";
-				
-				if(hotbar_slot.getNbt() == null || !hotbar_slot.getNbt().contains("Monumenta")) {
-					player_item_name = hotbar_slot.getItem().getName().getString();
-				}else {
-					player_item_name = hotbar_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-				}
-				
-				StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-				StonkCompanionClient.barrel_transactions.get(barrel_pos).put(player_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(player_item_name, 0) + item_qty_put);
-				StonkCompanionClient.barrel_transactions.get(barrel_pos).put(active_slot_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(active_slot_item_name, 0) - item_qty_taken);
-				
-				StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + active_slot_item.getName().getString() + " from the barrel.");
-				StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + player_item.getName().getString() + " into the barrel.");
+				onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, player_item_name, item_qty_put);
 			}
 			
 		}else if(action_type == SlotActionType.THROW && !is_player_inv) {
 			
-			Item active_slot_item = active_slot.getItem();
 			int active_slot_itemstk_qty = active_slot.getCount();
 			int item_qty_taken = (button == 0) ? 1 : active_slot_itemstk_qty;
 			
-			String active_slot_item_name = "";
+			String active_slot_item_name = getItemName(active_slot);
 			
-			if(active_slot.getNbt() == null || !active_slot.getNbt().contains("Monumenta")) {
-				active_slot_item_name = active_slot.getItem().getName().getString();
-			}else {
-				active_slot_item_name = active_slot.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-			}
-			
-			StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-			StonkCompanionClient.barrel_transactions.get(barrel_pos).put(active_slot_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(active_slot_item_name, 0) - item_qty_taken);
-			
-			
-			StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + active_slot_item.getName().getString() + " from the barrel.");
-			
+			onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);			
 		}
 		
 	}
 	
+	// Given an item it returns the item name.
+	private String getItemName(ItemStack given_item) {
+		
+		if(given_item.getNbt() == null || !given_item.getNbt().contains("Monumenta")) {
+			return given_item.getItem().getName().getString();
+		}else {
+			return given_item.getNbt().getCompound("plain").getCompound("display").getString("Name");				
+		}
+	}
+	
+	private void onClickInjectHelper(String barrel_pos, String item_name, int item_qty, boolean is_taking) {
+		if(is_taking) onClickInjectHelper(barrel_pos, item_name, item_qty, "", 0);
+		if(!is_taking) onClickInjectHelper(barrel_pos, "", 0, item_name, item_qty);
+	}
+	
 	// The intent of this is to just be a one stop function for all the click events instead of having like 15 of the same very similar things.
-	private void onClickInjectHelper(Slot took_item, Slot put_item) {
+	private void onClickInjectHelper(String barrel_pos, String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
+		
+		StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
+		StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);
+		
+		if(item_qty_put != 0) StonkCompanionClient.barrel_transactions.get(barrel_pos).put(put_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(put_item_name, 0) + item_qty_put);
+		if(item_qty_taken != 0) StonkCompanionClient.barrel_transactions.get(barrel_pos).put(taken_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(taken_item_name, 0) - item_qty_taken);
+		
+		// if(item_qty_put != 0) StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + put_item_name + " into the barrel.");
+		// if(item_qty_taken != 0) StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + taken_item_name + " from the barrel.");
 		
 	}
 	
@@ -560,6 +406,8 @@ public class HandledScreenMixin {
 		int barrely = StonkCompanionClient.last_right_click.getY();
 		int barrelz = StonkCompanionClient.last_right_click.getZ();	
 		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
+		
+		if(!StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) return;
 				
 		int currency_type = -1;
 		String label = "";
@@ -621,15 +469,20 @@ public class HandledScreenMixin {
 			}
 		}
 		
-		StonkCompanionClient.LOGGER.info("Checked Barrel: " + currency_type + " " + ask_price_compressed + " " + bid_price_compressed);
+		// StonkCompanionClient.LOGGER.info("Checked Barrel: " + currency_type + " " + ask_price_compressed + " " + bid_price_compressed);
 		
 		if (currency_type == -1 || ask_price_compressed == -1 || bid_price_compressed == -1) {
 			return;
 		}
 		
-		StonkCompanionClient.LOGGER.info("Created barrel at " + barrel_pos);
+		// Current assumption. Barrel doesn't change.
+		if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
+			
+			// StonkCompanionClient.LOGGER.info("Created barrel at " + barrel_pos);
+			StonkCompanionClient.barrel_prices.put(barrel_pos, new Barrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+		}
 		
-		StonkCompanionClient.barrel_prices.put(barrel_pos, new Barrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+		StonkCompanionClient.mistradeCheck(barrel_pos);
 	}
 	
 	private void detectFairPrice(List<Slot> items) {

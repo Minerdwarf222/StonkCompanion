@@ -180,12 +180,159 @@ public class StonkCompanionClient implements ClientModInitializer{
 	/*
 	 * As the name implies, this function is to go through every barrel in barrel_transactions and try to detect if any were mistrades.	
 	 */
+	public static void mistradeCheck(String barrel_pos) {
+		
+		if (!barrel_prices.containsKey(barrel_pos)) {
+			return;
+		}
+		
+		if (!barrel_transactions.containsKey(barrel_pos)) {
+			return;
+		}
+			
+		// So we should have a map of items to their total qtyies traded in this barrel
+		// and a map of barrel position to all the needed price info.
+		// Time to check if it is a mistrade or not.
+			
+		Barrel traded_barrel = barrel_prices.get(barrel_pos);
+			
+		// TODO: Clean up currency conversions.
+		// TODO: Look into maybe checking what is being traded and not just assuming only the correct item is being traded.
+		double r1_compressed = 0.0;
+		double r2_compressed = 0.0;
+		double r3_compressed = 0.0;
+		int other_items = 0;
+			
+		for (String traded_item : barrel_transactions.get(barrel_pos).keySet()) {
+								
+			int item_qty = barrel_transactions.get(barrel_pos).get(traded_item);
+				
+			String traded_item_lc = traded_item.toLowerCase();
+				
+			// EEEEEEE
+			if(traded_item_lc.equals("hyperexperience")) {
+				r1_compressed += 64*item_qty;
+			}else if(traded_item_lc.equals("concentrated_experience")) {
+				r1_compressed += item_qty;
+			}else if(traded_item_lc.equals("experience bottle")) {
+				r1_compressed += item_qty/8;
+			}else if(traded_item_lc.equals("hyper crystalline shard")) {
+				r2_compressed += 64*item_qty;
+			}else if(traded_item_lc.equals("compressed crystalline shard")) {
+				r2_compressed += item_qty;
+			}else if(traded_item_lc.equals("crystalline shard")) {
+				r2_compressed += item_qty/8;
+			}else if(traded_item_lc.equals("hyperchromatic archos ring")) {
+				r3_compressed += 64*item_qty;
+			}else if(traded_item_lc.equals("archos ring")) {
+				r3_compressed += item_qty;
+			}else {
+				other_items += item_qty;
+			}
+		}
+			
+		// Okay we have all our ducks in a row. Now to verify if this trade was correct.
+		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
+		double actual_compressed = 0.0;
+		boolean valid_transaction = false;
+		boolean wrong_currency = false;
+			
+		if(traded_barrel.currency_type == 1) {
+			valid_transaction = r1_compressed == expected_compressed;
+			actual_compressed = r1_compressed;
+				
+			if(r2_compressed != 0.0 || r3_compressed != 0.0) {
+				wrong_currency = true;
+			}
+		}
+			
+		if(traded_barrel.currency_type == 2) {
+			valid_transaction = r2_compressed == expected_compressed;
+			actual_compressed = r2_compressed;
+			
+			if(r1_compressed != 0.0 || r3_compressed != 0.0) {
+				wrong_currency = true;
+			}
+		}
+			
+		if(traded_barrel.currency_type == 3) {
+			valid_transaction = r3_compressed == expected_compressed;
+			actual_compressed = r3_compressed;
+				
+			if(r2_compressed != 0.0 || r1_compressed != 0.0) {
+				wrong_currency = true;
+			}
+		}
+			
+		/*
+		 * Here is where hell resides. Pretty printing the mistrades.
+		 * Barrel Name (Barrel Coordinates)
+		 * Buy: price in compressed (price as written on barrel)
+		 * Sell: price in compressed (price as written on barrel)
+		 * Sold/Bought: number of mats
+		 * Paid/Took: Net Currency
+		 * Unit Price: (net currency / number of mats)
+		 * Correction amount: (+/- currency to resolve mistrade.)
+		 * (If wrong_currency) Wrong Currency was used!
+		 */
+			
+		// if(valid_transaction) continue;
+		
+	    String currency_str = "";
+	        
+	    if (traded_barrel.currency_type == 1) {
+	       	currency_str = "cxp";
+	    }else if(traded_barrel.currency_type == 2) {
+	      	currency_str = "ccs";
+	    }else if(traded_barrel.currency_type == 3) {
+	       	currency_str = "ar";
+	    }
+	        
+	    double currency_delta = expected_compressed - actual_compressed;
+	    
+	    // Funny check if can be fixed by adding / taking mats.
+	    int mats_delta = 0;
+	    
+	    if(other_items < 0) {
+	    	
+	    	// Player bought mats
+	    	mats_delta = (currency_delta % traded_barrel.compressed_ask_price == 0) ? (int)(currency_delta / traded_barrel.compressed_ask_price) : 0;		    	
+	    	
+	    }else if (other_items > 0) {
+	    	
+	    	// Player sold mats
+	    	mats_delta = (currency_delta % traded_barrel.compressed_bid_price == 0) ? (int)(currency_delta / traded_barrel.compressed_bid_price) : 0;
+	    	
+	    }
+	        
+	    MinecraftClient mc = MinecraftClient.getInstance();
+	                
+	    mc.player.sendMessage(Text.literal("---------------"));
+	    mc.player.sendMessage(Text.literal("%s (%s)".formatted(traded_barrel.label, barrel_pos)));
+	    mc.player.sendMessage(Text.literal("Buy: %.3f %s (%s)".formatted(traded_barrel.compressed_ask_price, currency_str, traded_barrel.ask_price)));
+	    mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
+	    mc.player.sendMessage(Text.literal("%s: %d".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
+	    mc.player.sendMessage(Text.literal("%s: %.3f %s".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str)));
+	    mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (double)((other_items==0)? 1 : other_items))))));
+	    mc.player.sendMessage(Text.literal("Correction amount: %.3f %s".formatted(currency_delta, currency_str)));
+	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %d mats".formatted(mats_delta)));
+	    mc.player.sendMessage(Text.literal("Time since last log: %ds".formatted(barrel_timeout.get(barrel_pos)/20)));
+	    if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
+	    mc.player.sendMessage(Text.literal("---------------"));
+	    
+	    if(other_items == 0 && currency_delta == 0 && !wrong_currency) {
+			barrel_transactions.remove(barrel_pos);
+			barrel_prices.remove(barrel_pos);
+			barrel_timeout.remove(barrel_pos);
+		}
+	}
+	
 	private void mistradeCheck() {
 		// barrel_timeout.clear();
 		
-		LOGGER.info("Checking Mistrades!");
+		// LOGGER.info("Checking Mistrades!");
 		
-		for(String barrel_pos : barrel_transactions.keySet()) {
+		/*for(String barrel_pos : barrel_transactions.keySet()) {
 			LOGGER.info(barrel_pos +"'s changes:");
 			for(String traded_item : barrel_transactions.get(barrel_pos).keySet()) {
 				int item_qty = barrel_transactions.get(barrel_pos).get(traded_item);
@@ -205,130 +352,11 @@ public class StonkCompanionClient implements ClientModInitializer{
 				LOGGER.info("" + traded_barrel.currency_type);
 			}
 			
-		}
+		}*/
 		
 		for(String barrel_pos : barrel_transactions.keySet()) {
-			if (!barrel_prices.containsKey(barrel_pos)) {
-				continue;
-			}
-			
-			// So we should have a map of items to their total qtyies traded in this barrel
-			// and a map of barrel position to all the needed price info.
-			// Time to check if it is a mistrade or not.
-			
-			Barrel traded_barrel = barrel_prices.get(barrel_pos);
-			
-			// TODO: Clean up currency conversions.
-			// TODO: Look into maybe checking what is being traded and not just assuming only the correct item is being traded.
-			double r1_compressed = 0.0;
-			double r2_compressed = 0.0;
-			double r3_compressed = 0.0;
-			int other_items = 0;
-			
-			for (String traded_item : barrel_transactions.get(barrel_pos).keySet()) {
-								
-				int item_qty = barrel_transactions.get(barrel_pos).get(traded_item);
-				
-				String traded_item_lc = traded_item.toLowerCase();
-				
-				// EEEEEEE
-				if(traded_item_lc.equals("hyperexperience")) {
-					r1_compressed += 64*item_qty;
-				}else if(traded_item_lc.equals("concentrated_experience")) {
-					r1_compressed += item_qty;
-				}else if(traded_item_lc.equals("experience bottle")) {
-					r1_compressed += item_qty/8;
-				}else if(traded_item_lc.equals("hyper crystalline shard")) {
-					r2_compressed += 64*item_qty;
-				}else if(traded_item_lc.equals("compressed crystalline shard")) {
-					r2_compressed += item_qty;
-				}else if(traded_item_lc.equals("crystalline shard")) {
-					r2_compressed += item_qty/8;
-				}else if(traded_item_lc.equals("hyperchromatic archos ring")) {
-					r3_compressed += 64*item_qty;
-				}else if(traded_item_lc.equals("archos ring")) {
-					r3_compressed += item_qty;
-				}else {
-					other_items += item_qty;
-				}
-			}
-			
-			// Okay we have all our ducks in a row. Now to verify if this trade was correct.
-			double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
-			double actual_compressed = 0.0;
-			boolean valid_transaction = false;
-			boolean wrong_currency = false;
-			
-			if(traded_barrel.currency_type == 1) {
-				valid_transaction = r1_compressed == expected_compressed;
-				actual_compressed = r1_compressed;
-				
-				if(r2_compressed != 0.0 || r3_compressed != 0.0) {
-					wrong_currency = true;
-				}
-			}
-			
-			if(traded_barrel.currency_type == 2) {
-				valid_transaction = r2_compressed == expected_compressed;
-				actual_compressed = r2_compressed;
-				
-				if(r1_compressed != 0.0 || r3_compressed != 0.0) {
-					wrong_currency = true;
-				}
-			}
-			
-			if(traded_barrel.currency_type == 3) {
-				valid_transaction = r3_compressed == expected_compressed;
-				actual_compressed = r3_compressed;
-				
-				if(r2_compressed != 0.0 || r1_compressed != 0.0) {
-					wrong_currency = true;
-				}
-			}
-			
-			/*
-			 * Here is where hell resides. Pretty printing the mistrades.
-			 * Barrel Name (Barrel Coordinates)
-			 * Buy: price in compressed (price as written on barrel)
-			 * Sell: price in compressed (price as written on barrel)
-			 * Sold/Bought: number of mats
-			 * Paid/Took: Net Currency
-			 * Unit Price: (net currency / number of mats)
-			 * Correction amount: (+/- currency to resolve mistrade.)
-			 * (If wrong_currency) Wrong Currency was used!
-			 */
-			
-			// if(valid_transaction) continue;
-			
-	        String currency_str = "";
-	        
-	        if (traded_barrel.currency_type == 1) {
-	        	currency_str = "cxp";
-	        }else if(traded_barrel.currency_type == 2) {
-	        	currency_str = "ccs";
-	        }else if(traded_barrel.currency_type == 3) {
-	        	currency_str = "ar";
-	        }
-	        
-	        double currency_delta = expected_compressed - actual_compressed;
-	        
-	        MinecraftClient mc = MinecraftClient.getInstance();
-	                
-	        mc.player.sendMessage(Text.literal("---------------"));
-	        mc.player.sendMessage(Text.literal("%s (%s)".formatted(traded_barrel.label, barrel_pos)));
-	        mc.player.sendMessage(Text.literal("Buy: %.3f %s (%s)".formatted(traded_barrel.compressed_ask_price, currency_str, traded_barrel.ask_price)));
-	        mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
-	        mc.player.sendMessage(Text.literal("%s: %d".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
-	        mc.player.sendMessage(Text.literal("%s: %.3f %s".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str)));
-	        mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (double)other_items)))));
-	        mc.player.sendMessage(Text.literal("Correction amount: %.3f %s".formatted(currency_delta, currency_str)));
-	        if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
-	        mc.player.sendMessage(Text.literal("---------------"));
-			
+			mistradeCheck(barrel_pos);
 		}
-		
-		// barrel_transactions.clear();
-		// barrel_prices.clear();
 		
 	}
 	
