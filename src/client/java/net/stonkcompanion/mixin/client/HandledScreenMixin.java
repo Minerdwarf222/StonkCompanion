@@ -338,6 +338,14 @@ public class HandledScreenMixin {
 			String active_slot_item_name = getItemName(active_slot);
 			
 			onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);			
+		}else if(action_type == SlotActionType.QUICK_CRAFT && !is_player_inv) {
+			
+			int player_itemstk_qty = player_itemstk.getCount();
+			int item_qty_put = player_itemstk_qty;
+
+			String player_item_name = getItemName(player_itemstk);
+			
+			onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);	
 		}
 		
 	}
@@ -495,11 +503,12 @@ public class HandledScreenMixin {
 		int barrel_compressed_currency = 0;
 		
 		// The assumption is that there is basically just currency and mats in the barrel and 1 sign that says the price.
-		int barrel_mats = -1;
+		double barrel_mats = -1;
 		
 		int currency_type = -1;
 		double ask_price_compressed = -1;
 		double bid_price_compressed = -1;
+		String label = "";
 		
 		// Assumed it is a barrel or chest so check 27 slots. First pass is to check for sign.
 		for(int i = 0; i < 27; i++) {
@@ -521,6 +530,10 @@ public class HandledScreenMixin {
 					
 					NbtList sign_info = item.getNbt().getCompound("plain").getCompound("display").getList("Lore", NbtElement.STRING_TYPE);
 					
+					if(sign_info.size() > 2 && sign_info.get(1) != null) {					
+						label = sign_info.get(1).asString().replace(">", "").trim();
+					}
+					
 					for(NbtElement _e : sign_info) {
 						
 						String _sign_line = _e.asString().toLowerCase();
@@ -541,7 +554,11 @@ public class HandledScreenMixin {
 							currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
 							bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_bid+8));
 						}
-						
+					}
+					
+					// Break if we have found the sign. Assuming the first found correctly formatted sign is the correct sign. If it isn't. User error.
+					if (currency_type != -1 && ask_price_compressed != -1 && bid_price_compressed != -1) {
+						break;
 					}
 				}
 			}
@@ -562,6 +579,12 @@ public class HandledScreenMixin {
 			
 			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
 				item_name = item.getItem().getName().getString();
+				// StonkCompanionClient.LOGGER.info(item.getItem().getTranslationKey());
+				
+				if(item.getItem().getTranslationKey().endsWith("sign") || item.getItem().getTranslationKey().endsWith("written_book")) {
+					continue;
+				}
+				
 			}else {
 				item_name = item.getNbt().getCompound("plain").getCompound("display").getString("Name");				
 			}
@@ -575,8 +598,10 @@ public class HandledScreenMixin {
 			}
 		}
 		
-		//To account for the sign since we have 0 clue what the barrel item is actually.
-		barrel_mats--;
+		// Checking for stacks barrels.
+		if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
+			barrel_mats = barrel_mats/64.0;
+		}
 		
 		double spread = ask_price_compressed - bid_price_compressed;
         double mid = bid_price_compressed + spread / 2;
@@ -605,9 +630,9 @@ public class HandledScreenMixin {
         MinecraftClient mc = MinecraftClient.getInstance();
         String fairprice_msg = String.format("[StonkCompanion] FairStonk is %.1f %s.", interpolated_price, currency_str);
         
-        if(interpolated_price <= bid_price_compressed || mats_in_currency < 1) {
+        if(demand_modifier <= 0.005) {
         	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
-        }else if(interpolated_price >= ask_price_compressed) {
+        }else if(demand_modifier >= 0.995) {
         	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
         }
         

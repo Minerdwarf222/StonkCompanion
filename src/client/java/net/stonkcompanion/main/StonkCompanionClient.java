@@ -234,7 +234,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}
 		
 		// Checking for stacks barrels.
-		if(traded_barrel.label.toLowerCase().startsWith("64x")) {
+		if(traded_barrel.label.toLowerCase().startsWith("64x") || traded_barrel.label.toLowerCase().contains("stack")) {
 			other_items = other_items/64.0;
 		}
 			
@@ -297,6 +297,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 	        
 	    double currency_delta = expected_compressed - actual_compressed;
 	    
+	    // Bounds check.
+	    if(currency_delta < 0.0005 && currency_delta > -0.0005) currency_delta = 0;
+	    
+	    
 	    // Funny check if can be fixed by adding / taking mats.
 	    int mats_delta = 0;
 	    
@@ -320,10 +324,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
 	    mc.player.sendMessage(Text.literal("%s: %.3f".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
 	    mc.player.sendMessage(Text.literal("%s: %.3f %s".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str)));
-	    mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (double)((other_items==0)? 1 : other_items))))));
+	    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (other_items))))));
 	    mc.player.sendMessage(Text.literal("Correction amount: %.3f %s".formatted(currency_delta, currency_str)));
 	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %d mats".formatted(mats_delta)));
-	    mc.player.sendMessage(Text.literal("Time since last log: %ds".formatted(barrel_timeout.get(barrel_pos)/20)));
+	    mc.player.sendMessage(Text.literal("Time since last log: %ds/%ds".formatted(barrel_timeout.get(barrel_pos)/20, transaction_lifetime/20)));
 	    if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
 	    mc.player.sendMessage(Text.literal("--------------------"));
 	    
@@ -367,7 +371,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		
 		MinecraftClient mc = MinecraftClient.getInstance();
 		
-		mc.player.sendMessage(Text.literal("[StonkCompanion] Checked transactions."));
+		mc.player.sendMessage(Text.literal("[StonkCompanion] Done."));
 		
 	}
 	
@@ -375,11 +379,13 @@ public class StonkCompanionClient implements ClientModInitializer{
 	@Override
 	public void onInitializeClient() {
 
-		try {
-			Files.createDirectory(FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion"));
-		} catch (IOException e) {
-			
-			LOGGER.error("StonkCompanion failed to create the StonkCompanion config directory!");
+		if (!Files.isDirectory(FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion"))) {		
+			try {
+				Files.createDirectory(FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion"));
+			} catch (IOException e) {
+				
+				LOGGER.error("StonkCompanion failed to create the StonkCompanion config directory!");
+			}
 		}
 		
 		ClientTickEvents.START_CLIENT_TICK.register((client) -> {
@@ -488,7 +494,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    				context.getSource().sendFeedback(Text.literal(is_mistrade_checking ? "[StonkCompanion] Stopped detecting mistrades." : "[StonkCompanion] Detecting mistrades."));
 	    				is_mistrade_checking = !is_mistrade_checking;	
 	    			}else if(given_command.equals("MistradeCheck")) {
-	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Checking transactions."));
+	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Checking transactions..."));
 	    				mistradeCheck();
 	    			}
 	    			return 1;
