@@ -319,7 +319,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    	
 	    }
 	    
-	    String correction_dir = (currency_delta < 0) ? "Take" : "Put";
+	    String correction_dir = (currency_delta < 0) ? "Take out" : "Put in";
 	        
 	    MinecraftClient mc = MinecraftClient.getInstance();
 	    									
@@ -330,7 +330,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    mc.player.sendMessage(Text.literal("%s: %.3f".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
 	    mc.player.sendMessage(Text.literal("%s: %.3f %s".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str)));
 	    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (other_items))))));
-	    if(currency_delta == 0) mc.player.sendMessage(Text.literal("Valid Transaction."));
+	    if(currency_delta == 0) mc.player.sendMessage(Text.literal("Valid Transaction"));
 	    if(currency_delta != 0) mc.player.sendMessage(Text.literal("Correction amount: %s %.3f %s".formatted(correction_dir, Math.abs(currency_delta), currency_str)));
 	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta))));
 	    mc.player.sendMessage(Text.literal("Time since last log: %ds/%ds".formatted(barrel_timeout.get(barrel_pos)/20, transaction_lifetime/20)));
