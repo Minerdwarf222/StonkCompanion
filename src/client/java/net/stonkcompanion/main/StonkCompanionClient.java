@@ -59,7 +59,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static JsonObject checkpoints = new JsonObject();
 	
 	// I need to find a better way to do this. Oh well
-	public static boolean fairprice_detection = false;
+	public static boolean fairprice_detection = true;
 	
 	// Shamelessly stolen from UMM.
 	private static final Pattern shardGetterPattern = Pattern.compile(".*<(?<shard>[-\\w\\d]*)>.*");
@@ -318,6 +318,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    	mats_delta = (currency_delta % traded_barrel.compressed_bid_price == 0) ? (int)(currency_delta / traded_barrel.compressed_bid_price) : 0;
 	    	
 	    }
+	    
+	    String correction_dir = (currency_delta < 0) ? "Take" : "Put";
 	        
 	    MinecraftClient mc = MinecraftClient.getInstance();
 	    									
@@ -328,8 +330,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    mc.player.sendMessage(Text.literal("%s: %.3f".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
 	    mc.player.sendMessage(Text.literal("%s: %.3f %s".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str)));
 	    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (other_items))))));
-	    mc.player.sendMessage(Text.literal("Correction amount: %.3f %s".formatted(currency_delta, currency_str)));
-	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %d mats".formatted(mats_delta)));
+	    if(currency_delta == 0) mc.player.sendMessage(Text.literal("Valid Transaction."));
+	    if(currency_delta != 0) mc.player.sendMessage(Text.literal("Correction amount: %s %.3f %s".formatted(correction_dir, Math.abs(currency_delta), currency_str)));
+	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta))));
 	    mc.player.sendMessage(Text.literal("Time since last log: %ds/%ds".formatted(barrel_timeout.get(barrel_pos)/20, transaction_lifetime/20)));
 	    if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
 	    mc.player.sendMessage(Text.literal("--------------------"));
