@@ -29,6 +29,7 @@ public class ClientPlayNetworkMixin {
 	private void onInventoryPKT(InventoryS2CPacket packet, CallbackInfo ci) {
 
 		if(!StonkCompanionClient.checkpointing) return;
+		if(StonkCompanionClient.getShard().equals("plots")) return;
 		if(StonkCompanionClient.last_right_click == null) return;
 		
 		// int barrelx = StonkCompanionClient.last_right_click.getX();

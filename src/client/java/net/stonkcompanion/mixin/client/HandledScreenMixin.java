@@ -383,6 +383,7 @@ public class HandledScreenMixin {
 	{
 		
 		if(!StonkCompanionClient.checkpointing && !StonkCompanionClient.fairprice_detection && !StonkCompanionClient.is_mistrade_checking) return;
+		if(!StonkCompanionClient.getShard().equals("plots")) return;
 		if(screen.getClass() != GenericContainerScreen.class) return;
 		if(!screen.getTitle().getString().equals("Barrel")) return;
 		
@@ -393,7 +394,7 @@ public class HandledScreenMixin {
 		
 		if(list_of_items.size() != 27) return;
 		
-		if(StonkCompanionClient.is_mistrade_checking && StonkCompanionClient.last_right_click != null && StonkCompanionClient.getShard().equals("plots")) {
+		if(StonkCompanionClient.is_mistrade_checking && StonkCompanionClient.last_right_click != null) {
 			handlingMistradesClose(list_of_items);
 		}
 		
@@ -402,7 +403,7 @@ public class HandledScreenMixin {
 			stonkCompanionCreateCheckpoint(list_of_items);
 		}
 		
-		if(StonkCompanionClient.fairprice_detection && StonkCompanionClient.getShard().equals("plots")) {
+		if(StonkCompanionClient.fairprice_detection) {
 			detectFairPrice(list_of_items);
 		}
 		
