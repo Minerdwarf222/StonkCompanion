@@ -203,7 +203,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		double r1_compressed = 0.0;
 		double r2_compressed = 0.0;
 		double r3_compressed = 0.0;
-		int other_items = 0;
+		double other_items = 0;
 			
 		for (String traded_item : barrel_transactions.get(barrel_pos).keySet()) {
 								
@@ -214,7 +214,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 			// EEEEEEE
 			if(traded_item_lc.equals("hyperexperience")) {
 				r1_compressed += 64*item_qty;
-			}else if(traded_item_lc.equals("concentrated_experience")) {
+			}else if(traded_item_lc.equals("concentrated experience")) {
 				r1_compressed += item_qty;
 			}else if(traded_item_lc.equals("experience bottle")) {
 				r1_compressed += item_qty/8;
@@ -231,6 +231,11 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}else {
 				other_items += item_qty;
 			}
+		}
+		
+		// Checking for stacks barrels.
+		if(traded_barrel.label.toLowerCase().startsWith("64x")) {
+			other_items = other_items/64.0;
 		}
 			
 		// Okay we have all our ducks in a row. Now to verify if this trade was correct.
@@ -309,11 +314,11 @@ public class StonkCompanionClient implements ClientModInitializer{
 	        
 	    MinecraftClient mc = MinecraftClient.getInstance();
 	    									
-	    mc.player.sendMessage(Text.literal("--[StonkCompanion]--"));
+	    mc.player.sendMessage(Text.literal("---[StonkCompanion]---"));
 	    mc.player.sendMessage(Text.literal("%s (%s)".formatted(traded_barrel.label, barrel_pos)));
 	    mc.player.sendMessage(Text.literal("Buy: %.3f %s (%s)".formatted(traded_barrel.compressed_ask_price, currency_str, traded_barrel.ask_price)));
 	    mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
-	    mc.player.sendMessage(Text.literal("%s: %d".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
+	    mc.player.sendMessage(Text.literal("%s: %.3f".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
 	    mc.player.sendMessage(Text.literal("%s: %.3f %s".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str)));
 	    mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (double)((other_items==0)? 1 : other_items))))));
 	    mc.player.sendMessage(Text.literal("Correction amount: %.3f %s".formatted(currency_delta, currency_str)));
@@ -359,6 +364,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 		for(String barrel_pos : barrel_transactions.keySet()) {
 			mistradeCheck(barrel_pos, true);
 		}
+		
+		MinecraftClient mc = MinecraftClient.getInstance();
+		
+		mc.player.sendMessage(Text.literal("[StonkCompanion] Checked transactions."));
 		
 	}
 	
