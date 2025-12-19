@@ -45,7 +45,8 @@ public class HandledScreenMixin {
 		// Just a bunch of guard checks. First do we even care then is this a barrel and lastly are we in plots.
 		if(!StonkCompanionClient.is_mistrade_checking) return;
 		if(screen.getClass() != GenericContainerScreen.class) return;
-		if(!screen.getTitle().getString().equals("Barrel")) return;
+		// TODO: Is this really needed and if so what is a better way since this doesn't work.
+		// if(!screen.getTitle().getString().equals("Barrel")) return;
 		if(!StonkCompanionClient.getShard().equals("plots")) return;
 		if(slot == null) return;
 		
@@ -354,7 +355,7 @@ public class HandledScreenMixin {
 	private String getItemName(ItemStack given_item) {
 		
 		if(given_item.getNbt() == null || !given_item.getNbt().contains("Monumenta")) {
-			return given_item.getItem().getName().getString();
+			return given_item.getItem().getTranslationKey().substring(given_item.getItem().getTranslationKey().lastIndexOf('.')+1);
 		}else {
 			return given_item.getNbt().getCompound("plain").getCompound("display").getString("Name");				
 		}
@@ -385,11 +386,13 @@ public class HandledScreenMixin {
 		if(!StonkCompanionClient.checkpointing && !StonkCompanionClient.fairprice_detection && !StonkCompanionClient.is_mistrade_checking) return;
 		if(!StonkCompanionClient.getShard().equals("plots")) return;
 		if(screen.getClass() != GenericContainerScreen.class) return;
-		if(!screen.getTitle().getString().equals("Barrel")) return;
+		// TODO: Is this really needed and if so what is a better way since this doesn't work.
+		// if(!screen.getTitle().getString().equals("Barrel")) return;
 		
 		//String containerType = screen.getTitle().getString();
 		
 		ScreenHandler container = screen.getScreenHandler();
+
 		List<Slot> list_of_items = container.slots.stream().filter(slot -> slot.inventory.getClass() != PlayerInventory.class).toList();
 		
 		if(list_of_items.size() != 27) return;
@@ -435,7 +438,7 @@ public class HandledScreenMixin {
 			String item_name = "";
 			
 			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
-				item_name = item.getItem().getName().getString();
+				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
 				
 				if(item_name.toLowerCase().endsWith("sign")) {
 					// Okay we have a sign. Now to look to see if it has buy sell on it.
@@ -521,7 +524,7 @@ public class HandledScreenMixin {
 			String item_name = "";
 			
 			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
-				item_name = item.getItem().getName().getString();
+				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
 				
 				if(item_name.toLowerCase().endsWith("sign")) {
 					// Okay we have a sign. Now to look to see if it has buy sell on it.
@@ -579,7 +582,7 @@ public class HandledScreenMixin {
 			int item_qty = item.getCount();	
 			
 			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
-				item_name = item.getItem().getName().getString();
+				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
 				// StonkCompanionClient.LOGGER.info(item.getItem().getTranslationKey());
 				
 				if(item.getItem().getTranslationKey().endsWith("sign") || item.getItem().getTranslationKey().endsWith("written_book")) {
@@ -628,6 +631,8 @@ public class HandledScreenMixin {
         	currency_str = "ar";
         }
 
+        
+        // TODO: Add label
         MinecraftClient mc = MinecraftClient.getInstance();
         String fairprice_msg = String.format("[StonkCompanion] FairStonk is %.1f %s.", interpolated_price, currency_str);
         
@@ -661,6 +666,8 @@ public class HandledScreenMixin {
 		
 		JsonObject barrel_inventory = new JsonObject();
 		
+        MinecraftClient mc = MinecraftClient.getInstance();
+		
 		// Assumed it is a barrel or chest so check 27 slots.
 		for(int i = 0; i < 27; i++) {
 			
@@ -674,7 +681,10 @@ public class HandledScreenMixin {
 			int item_qty = item.getCount();	
 			
 			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
-				item_name = item.getItem().getName().getString();
+				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);				
+				/*mc.player.sendMessage(Text.literal("Close: " + item_name));
+				StonkCompanionClient.LOGGER.warn("Close: " + item_name);
+				StonkCompanionClient.LOGGER.warn("Close: " + item.getItem().getTranslationKey());*/
 			}else {
 				item_name = item.getNbt().getCompound("plain").getCompound("display").getString("Name");				
 			}
@@ -686,11 +696,11 @@ public class HandledScreenMixin {
 				barrel_inventory.add(item_name, indx_qtys);
 			}
 		}
-
+		
 		if (StonkCompanionClient.open_barrel_values.isBlank() || !barrel_inventory.toString().equals(StonkCompanionClient.open_barrel_values)) {
 			StonkCompanionClient.open_barrel_time = 0;
 			StonkCompanionClient.open_barrel_values = "";
-			StonkCompanionClient.LOGGER.warn("The barrel at " + String.format("x%d/y%d/z%d", barrelx, barrely, barrelz) + " failed to be checkpointed.");
+			mc.player.sendMessage(Text.literal(String.format("[StonkCompanion] The barrel at x%d/y%d/z%d failed to be checkpointed.", barrelx, barrely, barrelz)));
 			return;
 		}
 		
@@ -717,7 +727,7 @@ public class HandledScreenMixin {
 			StonkCompanionClient.checkpoints.add(barrel_pos, _chkpt_values);
 		}
 		
-        MinecraftClient mc = MinecraftClient.getInstance();
+
         mc.player.sendMessage(Text.literal("[StonkCompanion] Grabbed checkpoint for %s.".formatted(barrel_pos)));
 		
 		StonkCompanionClient.open_barrel_time = 0;

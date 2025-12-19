@@ -5,7 +5,6 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.arg
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -107,7 +106,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 			return -1;
 		}
 	}
-	
 	
 	public static double givenCurrReturnMult(String _s) {
 		String s = _s.toLowerCase().trim();
@@ -371,13 +369,17 @@ public class StonkCompanionClient implements ClientModInitializer{
 			
 		}*/
 		
-		for(String barrel_pos : barrel_transactions.keySet()) {
-			mistradeCheck(barrel_pos, true);
-		}
-		
 		MinecraftClient mc = MinecraftClient.getInstance();
 		
-		mc.player.sendMessage(Text.literal("[StonkCompanion] Done."));
+		if(barrel_transactions.isEmpty()) {
+			mc.player.sendMessage(Text.literal("[StonkCompanion] There are no transactions."));
+		}else {	
+			for(String barrel_pos : barrel_transactions.keySet()) {
+				mistradeCheck(barrel_pos, true);
+			}
+			
+			mc.player.sendMessage(Text.literal("[StonkCompanion] Done."));
+		}
 		
 	}
 	
@@ -409,7 +411,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 				}
 			}
 			
-			barrel_timeout.entrySet().removeIf(entry -> (transaction_lifetime <= entry.getValue()));
+			barrel_timeout.entrySet().removeIf(entry -> (entry.getValue() >= transaction_lifetime));
 			
 		});
 		
