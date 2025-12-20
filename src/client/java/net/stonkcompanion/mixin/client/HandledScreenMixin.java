@@ -97,8 +97,9 @@ public class HandledScreenMixin {
 		
 		if (player_itemstk == null) return;
 		
-		// String player_item_str = (player_itemstk != null) ? player_itemstk.getTranslationKey() : "None";
-		// String player_inv = (slot.inventory.getClass() == PlayerInventory.class) ? "Player" : "Not Player";
+		String player_item_str = (player_itemstk != null) ? player_itemstk.getTranslationKey() : "None";
+		String active_item_str = (active_slot != null) ? active_slot.getTranslationKey() : "None";
+		String player_inv = (slot.inventory.getClass() == PlayerInventory.class) ? "Player" : "Not Player";
 		
 		boolean is_player_inv = slot.inventory.getClass() == PlayerInventory.class;
 		
@@ -108,7 +109,7 @@ public class HandledScreenMixin {
 		
 		if (list_of_items.size() != 27) return;
 		
-		// StonkCompanionClient.LOGGER.info(player_inv + " slot. Slot ID: " + slot_id + " Button: " + button + " Action Type: " + action_type.name() + " Player Cursor: " + player_item_str);
+		StonkCompanionClient.LOGGER.info(player_inv + " slot. Slot ID: " + slot_id + " Button: " + button + " Action Type: " + action_type.name() + " Player Cursor: " + player_item_str + " Active Slot Item: " + active_item_str);
 
 		// Ignore the action if it is just two empty stacks.
 		if (player_itemstk.isEmpty() && !slot.hasStack()) {
@@ -375,8 +376,8 @@ public class HandledScreenMixin {
 		if(item_qty_put != 0) StonkCompanionClient.barrel_transactions.get(barrel_pos).put(put_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(put_item_name, 0) + item_qty_put);
 		if(item_qty_taken != 0) StonkCompanionClient.barrel_transactions.get(barrel_pos).put(taken_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(taken_item_name, 0) - item_qty_taken);
 		
-		// if(item_qty_put != 0) StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + put_item_name + " into the barrel.");
-		// if(item_qty_taken != 0) StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + taken_item_name + " from the barrel.");
+		if(item_qty_put != 0) StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + put_item_name + " into the barrel.");
+		if(item_qty_taken != 0) StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + taken_item_name + " from the barrel.");
 		
 	}
 	
@@ -437,7 +438,12 @@ public class HandledScreenMixin {
 			
 			String item_name = "";
 			
-			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
+			if(item.getNbt() == null) {
+				continue;
+			}
+			
+			
+			if(!item.getNbt().contains("Monumenta")) {
 				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
 				
 				if(item_name.toLowerCase().endsWith("sign")) {
@@ -523,7 +529,12 @@ public class HandledScreenMixin {
 			
 			String item_name = "";
 			
-			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
+			if(item.getNbt() == null) {
+				continue;
+			}
+			
+			if(!item.getNbt().contains("Monumenta")) {
+
 				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
 				
 				if(item_name.toLowerCase().endsWith("sign")) {
@@ -573,7 +584,7 @@ public class HandledScreenMixin {
 		}
 		
 		for(int i = 0; i < 27; i++) {
-			
+						
 			if(!items.get(i).hasStack()) continue;
 			
 			ItemStack item = items.get(i).getStack();

@@ -287,12 +287,16 @@ public class StonkCompanionClient implements ClientModInitializer{
 		if(valid_transaction && hide_valid) return;
 		
 	    String currency_str = "";
+	    String hyper_str = "";
 	        
 	    if (traded_barrel.currency_type == 1) {
+	    	hyper_str = "hxp";
 	       	currency_str = "cxp";
 	    }else if(traded_barrel.currency_type == 2) {
+	    	hyper_str = "hcs";
 	      	currency_str = "ccs";
 	    }else if(traded_barrel.currency_type == 3) {
+	    	hyper_str = "har";
 	       	currency_str = "ar";
 	    }
 	        
@@ -316,7 +320,13 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    	mats_delta = (currency_delta % traded_barrel.compressed_bid_price == 0) ? (int)(currency_delta / traded_barrel.compressed_bid_price) : 0;
 	    	
 	    }
+		
+		int actual_hyper_amount = (int)(Math.floor(Math.abs(actual_compressed)/64));
+		double actual_compressed_amount = (Math.abs(actual_compressed)%64);
 	    
+		int corrective_hyper_amount = (int)(Math.floor(Math.abs(currency_delta)/64));
+		double corrective_compressed_amount = (Math.abs(currency_delta)%64);
+		
 	    String correction_dir = (currency_delta < 0) ? "Take out" : "Put in";
 	        
 	    MinecraftClient mc = MinecraftClient.getInstance();
@@ -326,10 +336,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    mc.player.sendMessage(Text.literal("Buy: %.3f %s (%s)".formatted(traded_barrel.compressed_ask_price, currency_str, traded_barrel.ask_price)));
 	    mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
 	    mc.player.sendMessage(Text.literal("%s: %.3f".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
-	    mc.player.sendMessage(Text.literal("%s: %.3f %s".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str)));
+	    mc.player.sendMessage(Text.literal("%s: %.3f %s (%d %s %.2f %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str, actual_hyper_amount, hyper_str, actual_compressed_amount, currency_str)));
 	    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (other_items))))));
 	    if(currency_delta == 0) mc.player.sendMessage(Text.literal("Valid Transaction"));
-	    if(currency_delta != 0) mc.player.sendMessage(Text.literal("Correction amount: %s %.3f %s".formatted(correction_dir, Math.abs(currency_delta), currency_str)));
+	    if(currency_delta != 0) mc.player.sendMessage(Text.literal("Correction amount: %s %.3f %s (%d %s %.2f %s)".formatted(correction_dir, Math.abs(currency_delta), currency_str, corrective_hyper_amount, hyper_str, corrective_compressed_amount, currency_str)));
 	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta))));
 	    mc.player.sendMessage(Text.literal("Time since last log: %ds/%ds".formatted(barrel_timeout.get(barrel_pos)/20, transaction_lifetime/20)));
 	    if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
