@@ -109,7 +109,7 @@ public class HandledScreenMixin {
 		
 		if (list_of_items.size() != 27) return;
 		
-		StonkCompanionClient.LOGGER.info(player_inv + " slot. Slot ID: " + slot_id + " Button: " + button + " Action Type: " + action_type.name() + " Player Cursor: " + player_item_str + " Active Slot Item: " + active_item_str);
+		if(StonkCompanionClient.is_verbose_logging) StonkCompanionClient.LOGGER.info(player_inv + " slot. Slot ID: " + slot_id + " Button: " + button + " Action Type: " + action_type.name() + " Player Cursor: " + player_item_str + " Active Slot Item: " + active_item_str);
 
 		// Ignore the action if it is just two empty stacks.
 		if (player_itemstk.isEmpty() && !slot.hasStack()) {
@@ -376,8 +376,8 @@ public class HandledScreenMixin {
 		if(item_qty_put != 0) StonkCompanionClient.barrel_transactions.get(barrel_pos).put(put_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(put_item_name, 0) + item_qty_put);
 		if(item_qty_taken != 0) StonkCompanionClient.barrel_transactions.get(barrel_pos).put(taken_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(taken_item_name, 0) - item_qty_taken);
 		
-		if(item_qty_put != 0) StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + put_item_name + " into the barrel.");
-		if(item_qty_taken != 0) StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + taken_item_name + " from the barrel.");
+		if(StonkCompanionClient.is_verbose_logging && item_qty_put != 0) StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + put_item_name + " into the barrel.");
+		if(StonkCompanionClient.is_verbose_logging && item_qty_taken != 0) StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + taken_item_name + " from the barrel.");
 		
 	}
 	

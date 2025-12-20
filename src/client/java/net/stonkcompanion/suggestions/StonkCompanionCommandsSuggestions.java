@@ -29,7 +29,10 @@ public class StonkCompanionCommandsSuggestions {
 			builder.suggest("ToggleMistradeCheck");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"mistradecheck")) {
-			builder.suggest("MistradeCheck");
+			builder.suggest("MistradeCheck"); 
+		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"toggleverboselogging")) {
+			builder.suggest("ToggleVerboseLogging");
 		}
 		
 		return builder.buildFuture();

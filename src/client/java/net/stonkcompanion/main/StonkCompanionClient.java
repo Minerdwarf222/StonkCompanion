@@ -48,6 +48,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	// Coreprotect changes. Like changing the hovertext literal to the monu item name.
 	private boolean change_coreprotect = true;
+	
+	// Bool
+	public static boolean is_verbose_logging = false;
 
 	// Checkpoint vars. Probs move elsewhere later.
 	public static boolean checkpointing = false;
@@ -517,6 +520,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			}else if(given_command.equals("MistradeCheck")) {
 	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Checking transactions..."));
 	    				mistradeCheck();
+	    			}else if(given_command.equals("ToggleVerboseLogging")) {
+	    				context.getSource().sendFeedback(Text.literal(is_verbose_logging ? "[StonkCompanion] Stopped verbose logging." : "[StonkCompanion] Started verbose logging."));
+	    				is_verbose_logging = !is_verbose_logging;	
 	    			}
 	    			return 1;
 	    		}
