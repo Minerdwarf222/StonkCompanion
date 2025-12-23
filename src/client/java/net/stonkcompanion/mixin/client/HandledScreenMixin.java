@@ -707,20 +707,26 @@ public class HandledScreenMixin {
         double intraspread_factor = demand_modifier * spread;
         double interpolated_price = bid_price_compressed + intraspread_factor;
         
-        String currency_str = "";
-        
-        if (currency_type == 1) {
-        	currency_str = "cxp";
-        }else if(currency_type == 2) {
-        	currency_str = "ccs";
-        }else if(currency_type == 3) {
-        	currency_str = "ar";
-        }
+	    String currency_str = "";
+	    String hyper_str = "";
+	        
+	    if (currency_type == 1) {
+	    	hyper_str = "hxp";
+	       	currency_str = "cxp";
+	    }else if(currency_type == 2) {
+	    	hyper_str = "hcs";
+	      	currency_str = "ccs";
+	    }else if(currency_type == 3) {
+	    	hyper_str = "har";
+	       	currency_str = "ar";
+	    }
 
+		int interpolated_hyper_amount = (int)(Math.floor(Math.abs(interpolated_price)/64));
+		double interpolated_compressed_amount = (Math.abs(interpolated_price)%64);	    
         
         // TODO: Add label
         MinecraftClient mc = MinecraftClient.getInstance();
-        String fairprice_msg = String.format("[StonkCompanion] FairStonk is %.1f %s.", interpolated_price, currency_str);
+        String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %.1f %s (%d %s %.1f %s).", label, interpolated_price, currency_str, interpolated_hyper_amount, hyper_str, interpolated_compressed_amount, currency_str);
         
         if(demand_modifier <= 0.005) {
         	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
