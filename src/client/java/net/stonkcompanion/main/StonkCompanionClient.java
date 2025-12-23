@@ -51,6 +51,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	// Bool
 	public static boolean is_verbose_logging = false;
+	
+	// Anti-monu flag
 
 	// Checkpoint vars. Probs move elsewhere later.
 	public static boolean checkpointing = false;
@@ -75,6 +77,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static HashMap<String, HashMap<String, Integer>> barrel_transactions = new HashMap<>();
 	public static HashMap<String, Integer> barrel_timeout = new HashMap<>();
 	public static HashMap<String, Barrel> barrel_prices = new HashMap<>();
+	public static boolean anti_monu_inv_init = false;
+	public static boolean anti_monu_is_not_barrel = false;
 	
 	public static String getShard() {
 		if (cachedShard != null && lastUpdateTimeShard + 2000 > System.currentTimeMillis()) {
@@ -435,6 +439,8 @@ public class StonkCompanionClient implements ClientModInitializer{
     		last_right_click =  hitResult.getBlockPos();
         
     		anti_monu = true;
+    		anti_monu_inv_init = true;
+    		anti_monu_is_not_barrel = false;
     	
         	return ActionResult.PASS;
     	});

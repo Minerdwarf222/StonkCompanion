@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.google.gson.JsonObject;
 
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -40,6 +41,70 @@ public class HandledScreenMixin {
 		stonkCompanionMouseClickInjectHelper((HandledScreen<?>) (Object) this, slot, slot_id, button, action_type);
 	}
 	
+	@Inject(at = @At("HEAD"), method = "init()V")
+	private void stonkCompanionOnInitInject(CallbackInfo info) 
+	{
+		initSetup((HandledScreen<?>) (Object) this);
+	}
+	
+	private void initSetup(HandledScreen<?> screen) {
+		
+		// Just a wall of guard statements.		
+		if(!StonkCompanionClient.checkpointing && !StonkCompanionClient.fairprice_detection && !StonkCompanionClient.is_mistrade_checking) return;
+		if(!StonkCompanionClient.getShard().equals("plots")) return;
+		if(screen.getClass() != GenericContainerScreen.class) {
+			if(!StonkCompanionClient.anti_monu && !StonkCompanionClient.anti_monu_inv_init) return;
+			initHelper();
+			return;
+		}
+		if(!StonkCompanionClient.anti_monu) return;
+		if(!StonkCompanionClient.anti_monu_inv_init) {
+			// Here a screen opened w/o the previous screen closing. This is likely Rem or the like.
+			// So we should run mistradecheck if need be.
+			initHelper();
+			return;
+		}
+		StonkCompanionClient.anti_monu_inv_init = false;
+		if(StonkCompanionClient.last_right_click == null) return;
+		MinecraftClient mc = MinecraftClient.getInstance();
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click) == null) return;
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click).getType() != BlockEntityType.BARREL) return;
+		
+		// At this point we know we are looking, it is plots, it is a generic container, and we had likely just clicked a barrel.
+		
+		// Here's the thought. Detecting when a barrel is open vs Rem etc is open.
+		// Since when those are opened while barrel is open the barrel close function doesn't get called.
+		// Problem is since close doesn't get ran, we can't look at the final state of the barrel.
+		// The solution. For mistrade check we only care about the sign and we can check for sign on first packet sent.
+		//		For any issues with that we can just don't care, user fault.
+		//		For fairprice and checkpointing we can just have them not run. Again user fault.
+		//		Better to not run then to faultly run.
+		
+		
+		
+	}
+	
+	private void initHelper() {
+		StonkCompanionClient.anti_monu_is_not_barrel = true;
+		StonkCompanionClient.anti_monu = false;
+		if(StonkCompanionClient.last_right_click == null) return;
+		MinecraftClient mc = MinecraftClient.getInstance();
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click) == null) return;
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click).getType() != BlockEntityType.BARREL) return;
+		
+		int barrelx = StonkCompanionClient.last_right_click.getX();
+		int barrely = StonkCompanionClient.last_right_click.getY();
+		int barrelz = StonkCompanionClient.last_right_click.getZ();	
+		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
+		
+		if(!StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) {
+			StonkCompanionClient.barrel_prices.remove(barrel_pos);
+			return;
+		}
+		
+		StonkCompanionClient.mistradeCheck(barrel_pos, false);
+	}
+	
 	private void stonkCompanionMouseClickInjectHelper(HandledScreen<?> screen, Slot slot, int slot_id, int button, SlotActionType action_type) {
 		
 		// Just a bunch of guard checks. First do we even care then is this a barrel and lastly are we in plots.
@@ -49,6 +114,12 @@ public class HandledScreenMixin {
 		// if(!screen.getTitle().getString().equals("Barrel")) return;
 		if(!StonkCompanionClient.getShard().equals("plots")) return;
 		if(slot == null) return;
+		if(!StonkCompanionClient.anti_monu) return;
+		if(StonkCompanionClient.anti_monu_is_not_barrel) return;
+		if(StonkCompanionClient.last_right_click == null) return;
+		MinecraftClient mc = MinecraftClient.getInstance();
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click) == null) return;
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click).getType() != BlockEntityType.BARREL) return;
 		
 		// Now that we have this. We need to figure out and log what is going on in the barrel.
 		// What we care about is what is being put into and taken out of the barrel.
@@ -84,8 +155,6 @@ public class HandledScreenMixin {
 		//		throw, button 1 (Ctrl throw): Throws the entire inventory slot out.
 		//		quick_craft (???): I don't understand this, but sometimes it basically just does pickup left-click inventory slot + cursor slot > stack size does.
 		//			:sob: quick_craft is dragging
-		
-		if(StonkCompanionClient.last_right_click == null) return;
 		
 		int barrelx = StonkCompanionClient.last_right_click.getX();
 		int barrely = StonkCompanionClient.last_right_click.getY();
@@ -387,6 +456,13 @@ public class HandledScreenMixin {
 		if(!StonkCompanionClient.checkpointing && !StonkCompanionClient.fairprice_detection && !StonkCompanionClient.is_mistrade_checking) return;
 		if(!StonkCompanionClient.getShard().equals("plots")) return;
 		if(screen.getClass() != GenericContainerScreen.class) return;
+		if(!StonkCompanionClient.anti_monu) return;
+		StonkCompanionClient.anti_monu = false;
+		if(StonkCompanionClient.anti_monu_is_not_barrel) return;
+		if(StonkCompanionClient.last_right_click == null) return;
+		MinecraftClient mc = MinecraftClient.getInstance();
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click) == null) return;
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click).getType() != BlockEntityType.BARREL) return;
 		// TODO: Is this really needed and if so what is a better way since this doesn't work.
 		// if(!screen.getTitle().getString().equals("Barrel")) return;
 		
@@ -398,12 +474,11 @@ public class HandledScreenMixin {
 		
 		if(list_of_items.size() != 27) return;
 		
-		if(StonkCompanionClient.is_mistrade_checking && StonkCompanionClient.last_right_click != null) {
+		if(StonkCompanionClient.is_mistrade_checking) {
 			handlingMistradesClose(list_of_items);
 		}
 		
-		if(StonkCompanionClient.checkpointing && StonkCompanionClient.last_right_click != null && StonkCompanionClient.anti_monu) {
-			StonkCompanionClient.anti_monu = false;
+		if(StonkCompanionClient.checkpointing) {
 			stonkCompanionCreateCheckpoint(list_of_items);
 		}
 		
