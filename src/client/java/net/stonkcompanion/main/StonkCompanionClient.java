@@ -464,10 +464,15 @@ public class StonkCompanionClient implements ClientModInitializer{
 			String name_item = "";
 
 			if(item_interaction.size() != 0) {
-
-				HoverEvent item_transaction = parts_of_msg.get(3).getStyle().getHoverEvent();				   
+				
+				HoverEvent item_transaction = parts_of_msg.get(3).getStyle().getHoverEvent();		
+				
 				String temp_name_item = item_transaction.getValue(HoverEvent.Action.SHOW_TEXT).toString();
 
+				// written_books or writable_books have hoverevent, but it doesn't show anything? So just check if it starts with a literal anyway.
+				// Since it is either not something we care about or it is not in the expected format.
+				if (!temp_name_item.startsWith("literal{")) return message;
+				
 				temp_name_item = temp_name_item.replace("literal{", "");
 				temp_name_item = temp_name_item.substring(0, temp_name_item.indexOf("}"));
 				   
