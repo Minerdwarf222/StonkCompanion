@@ -359,6 +359,22 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}
 	}
 	
+	public static String categoreyMaker(String label) {
+		// Changing barrel label "Stonk #" -> "Stonk"
+		// Case 1: label is of the form "Stonk #".
+		// Case 2: label is of the form "Stonk0#". Why? Idk. Just was originally written that way.
+
+		String category = label.trim();
+		int label_len = label.length();
+		if(label_len > 0 && '0' <= label.charAt(label_len-1) && label.charAt(label_len-1) <= '9') {
+		  category = label.substring(0, label_len-1).trim();
+		}else if (label_len > 1 && label.charAt(label_len-1) == '0' && '0' <= label.charAt(label_len-2) && label.charAt(label_len-2) <= '9') {
+		  category = label.substring(0, label_len-2).trim();
+		}
+		
+		return category;
+	}
+	
 	private void mistradeCheck() {
 		// barrel_timeout.clear();
 		

@@ -726,7 +726,7 @@ public class HandledScreenMixin {
         
         // TODO: Add label
         MinecraftClient mc = MinecraftClient.getInstance();
-        String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %.1f %s (%d %s %.1f %s).", label, interpolated_price, currency_str, interpolated_hyper_amount, hyper_str, interpolated_compressed_amount, currency_str);
+        String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %.1f %s (%d %s %.1f %s).", StonkCompanionClient.categoreyMaker(label), interpolated_price, currency_str, interpolated_hyper_amount, hyper_str, interpolated_compressed_amount, currency_str);
         
         if(demand_modifier <= 0.005) {
         	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
