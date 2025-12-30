@@ -6,7 +6,9 @@
 		"HandledScreenMixin",
 		"ClientPlayNetworkMixin",
 		"PlayerListHudAccessor",
-		"HandledScreenAccessor"
+		"HandledScreenAccessor",
+		"ScreenMixin",
+		"ScreenAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
