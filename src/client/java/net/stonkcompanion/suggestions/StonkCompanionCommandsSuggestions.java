@@ -34,6 +34,9 @@ public class StonkCompanionCommandsSuggestions {
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"toggleverboselogging")) {
 			builder.suggest("ToggleVerboseLogging");
 		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"clearreports")) {
+			builder.suggest("ClearReports");
+		}
 		
 		return builder.buildFuture();
 	}
