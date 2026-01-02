@@ -12,15 +12,20 @@ public class TransactionGui {
 	
 	public static TransactionWidget recentWidget = null;
 	
+	@SuppressWarnings("resource")
 	public boolean shouldRender() {
 		
 		//StonkCompanionClient.LOGGER.warn("Should Render?");
 		
+		if(!StonkCompanionClient.is_mistrade_checking) return false;
+		if(!StonkCompanionClient.getShard().equals("plots")) return false;
+		if(!(MinecraftClient.getInstance().currentScreen instanceof GenericContainerScreen)) return false;
 		if(StonkCompanionClient.last_right_click == null) return false;
 		//StonkCompanionClient.LOGGER.warn("last_right_click is not null.");
-		if(!StonkCompanionClient.anti_monu) return false;
-		//StonkCompanionClient.LOGGER.warn("anti_monu is true.");
+		if(StonkCompanionClient.anti_monu_is_not_barrel) return false;
+		//StonkCompanionClient.LOGGER.warn("anti_monu_is_not_barrel is false.");
 		MinecraftClient mc = MinecraftClient.getInstance();
+		if(mc.player.getWorld() != null)
 		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click) == null) return false;
 		//StonkCompanionClient.LOGGER.warn("There is a block.");
 		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click).getType() != BlockEntityType.BARREL) return false;
@@ -28,7 +33,7 @@ public class TransactionGui {
 		// if(!StonkCompanionClient.anti_monu_inv_init) return false;
 		// StonkCompanionClient.LOGGER.warn("anti_monu_inv_init is true.");
 		
-		return StonkCompanionClient.getShard().equals("plots") && MinecraftClient.getInstance().currentScreen instanceof GenericContainerScreen && StonkCompanionClient.is_mistrade_checking;
+		return true;
 	}
 	
 }

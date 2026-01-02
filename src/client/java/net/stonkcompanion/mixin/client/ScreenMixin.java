@@ -13,6 +13,7 @@ import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
 import net.minecraft.client.gui.screen.Screen;
+import net.stonkcompanion.main.StonkCompanionClient;
 import net.stonkcompanion.main.TransactionGui;
 import net.stonkcompanion.main.TransactionWidget;
 
@@ -46,6 +47,7 @@ public abstract class ScreenMixin extends AbstractParentElement {
 	}
 	@Inject(at = @At("TAIL"), method = "resize")
 	void onResize(MinecraftClient client, int width, int height, CallbackInfo ci) {
+		StonkCompanionClient.did_screen_resize = true;
 		initializeWidget();
 	}
 	

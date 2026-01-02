@@ -32,6 +32,7 @@ public class ClientPlayNetworkMixin {
 	@Inject(at = @At(value = "TAIL"), method = "onInventory(Lnet/minecraft/network/packet/s2c/play/InventoryS2CPacket;)V", cancellable = true)
 	private void onInventoryPKT(InventoryS2CPacket packet, CallbackInfo ci) {
 
+		StonkCompanionClient.is_there_barrel_price = false;
 		if(!StonkCompanionClient.checkpointing && !StonkCompanionClient.is_mistrade_checking) return;
 		if(!StonkCompanionClient.getShard().equals("plots")) return;
 		if(StonkCompanionClient.last_right_click == null) return;
@@ -62,6 +63,19 @@ public class ClientPlayNetworkMixin {
 				   || StonkCompanionClient.se_coords[1] < barrelz) {
 			return;	
 		}*/
+		
+		if(StonkCompanionClient.is_mistrade_checking) {
+			
+			String[] fair_price_results = StonkCompanionClient.detectFairPrice(list_of_slots);
+			
+			if (fair_price_results == null) return;
+			double interpolated_price = Double.parseDouble(fair_price_results[0]);
+			int currency_type = (int)Double.parseDouble(fair_price_results[1]);
+			
+			StonkCompanionClient.fairprice_currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(currency_type);
+
+		    StonkCompanionClient.fairprice_val = interpolated_price;
+		}
 		
 		if(StonkCompanionClient.is_mistrade_checking) {
 			
@@ -151,6 +165,9 @@ public class ClientPlayNetworkMixin {
 					// StonkCompanionClient.LOGGER.info("Created barrel at " + barrel_pos);
 					StonkCompanionClient.barrel_prices.put(barrel_pos, new Barrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
 				}
+				
+				StonkCompanionClient.barrel_pos_found = barrel_pos;
+				StonkCompanionClient.is_there_barrel_price = true;
 			}
 			
 		}

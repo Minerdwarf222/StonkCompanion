@@ -3,6 +3,7 @@ package net.stonkcompanion.mixin.client;
 import java.util.HashMap;
 import java.util.List;
 
+import org.joml.Math;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -48,8 +49,12 @@ public class HandledScreenMixin {
 	}
 	
 	private void initSetup(HandledScreen<?> screen) {
-		
+			
 		// Just a wall of guard statements.		
+		if(StonkCompanionClient.did_screen_resize) {
+			StonkCompanionClient.did_screen_resize = false;
+			return;
+		}
 		if(!StonkCompanionClient.checkpointing && !StonkCompanionClient.fairprice_detection && !StonkCompanionClient.is_mistrade_checking) return;
 		if(!StonkCompanionClient.getShard().equals("plots")) return;
 		if(screen.getClass() != GenericContainerScreen.class) {
@@ -80,13 +85,13 @@ public class HandledScreenMixin {
 		//		For fairprice and checkpointing we can just have them not run. Again user fault.
 		//		Better to not run then to faultly run.
 		
-		
-		
 	}
 	
 	private void initHelper() {
 		StonkCompanionClient.anti_monu_is_not_barrel = true;
 		StonkCompanionClient.anti_monu = false;
+		StonkCompanionClient.is_there_barrel_price = false;
+		StonkCompanionClient.barrel_pos_found = "";
 		if(StonkCompanionClient.last_right_click == null) return;
 		MinecraftClient mc = MinecraftClient.getInstance();
 		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click) == null) return;
@@ -441,12 +446,124 @@ public class HandledScreenMixin {
 		
 		StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
 		StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);
+			
+		onClickActionAdd(barrel_pos, taken_item_name, item_qty_taken, put_item_name, item_qty_put);
+		onClickActionMistradeCheck(barrel_pos);
 		
 		if(item_qty_put != 0) StonkCompanionClient.barrel_transactions.get(barrel_pos).put(put_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(put_item_name, 0) + item_qty_put);
 		if(item_qty_taken != 0) StonkCompanionClient.barrel_transactions.get(barrel_pos).put(taken_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(taken_item_name, 0) - item_qty_taken);
 		
 		if(StonkCompanionClient.is_verbose_logging && item_qty_put != 0) StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + put_item_name + " into the barrel.");
 		if(StonkCompanionClient.is_verbose_logging && item_qty_taken != 0) StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + taken_item_name + " from the barrel.");
+		
+	}
+	
+	private void onClickActionMistradeCheck(String barrel_pos) {
+		
+		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
+		if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) return;
+		
+		Barrel traded_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+		double other_items = StonkCompanionClient.barrel_actions.get(barrel_pos)[0];
+		double actual_compressed = StonkCompanionClient.barrel_actions.get(barrel_pos)[1];
+		
+		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
+		
+	    double currency_delta = expected_compressed - actual_compressed;
+	    
+	    String currency_str = "";
+	    
+	    if (traded_barrel.currency_type == 1) {
+	       	currency_str = "cxp";
+	    }else if(traded_barrel.currency_type == 2) {
+	      	currency_str = "ccs";
+	    }else if(traded_barrel.currency_type == 3) {
+	       	currency_str = "ar";
+	    }
+	    
+	    // Bounds check.
+	    if(currency_delta < 0.0005 && currency_delta > -0.0005) currency_delta = 0;
+
+	    if(currency_delta == 0) {
+	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, true);
+	    	StonkCompanionClient.barrel_transaction_solution.remove(barrel_pos);
+	    }else if(currency_delta != 0) {
+	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, false);	    	
+	    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", Math.abs(currency_delta), currency_str));
+	    }
+	}
+	
+	
+	private void onClickActionAdd(String barrel_pos, String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
+	
+		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
+		
+		int currency_type = StonkCompanionClient.barrel_prices.get(barrel_pos).currency_type;
+		String label = StonkCompanionClient.barrel_prices.get(barrel_pos).label;
+		
+		if(StonkCompanionClient.barrel_actions.get(barrel_pos) == null) {
+			StonkCompanionClient.barrel_actions.put(barrel_pos, new double[]{0.0, 0.0});
+		}
+		
+		double[] barrel_actions = StonkCompanionClient.barrel_actions.get(barrel_pos);
+		
+		if(item_qty_taken != 0) {
+			String taken_item_name_lc = taken_item_name.toLowerCase();
+			
+			if(currency_type==1 && taken_item_name_lc.equals("hyperexperience")) {
+				barrel_actions[1] -= 64*item_qty_taken;
+			}else if(currency_type==1 && taken_item_name_lc.equals("concentrated experience")) {
+				barrel_actions[1] -= item_qty_taken;
+			}else if(currency_type==1 && taken_item_name_lc.equals("experience bottle")) {
+				barrel_actions[1] -= (double)(item_qty_taken)/8.0;
+			}else if(currency_type==2 && taken_item_name_lc.equals("hyper crystalline shard")) {
+				barrel_actions[1] -= 64*item_qty_taken;
+			}else if(currency_type==2 && taken_item_name_lc.equals("compressed crystalline shard")) {
+				barrel_actions[1] -= item_qty_taken;
+			}else if(currency_type==2 && taken_item_name_lc.equals("crystalline shard")) {
+				barrel_actions[1] -= (double)(item_qty_taken)/8.0;
+			}else if(currency_type==3 && taken_item_name_lc.equals("hyperchromatic archos ring")) {
+				barrel_actions[1] -= 64*item_qty_taken;
+			}else if(currency_type==3 && taken_item_name_lc.equals("archos ring")) {
+				barrel_actions[1] -= item_qty_taken;
+			}else {
+				
+				if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
+					barrel_actions[0] -= (double)(item_qty_taken)/64.0;
+				}else {
+					barrel_actions[0] -= item_qty_taken;
+				}
+			}
+		}
+		
+		if(item_qty_put != 0) {
+			String taken_item_name_lc = put_item_name.toLowerCase();
+					
+			if(currency_type==1 && taken_item_name_lc.equals("hyperexperience")) {
+				barrel_actions[1] += 64*item_qty_put;
+			}else if(currency_type==1 && taken_item_name_lc.equals("concentrated experience")) {
+				barrel_actions[1] += item_qty_put;
+			}else if(currency_type==1 && taken_item_name_lc.equals("experience bottle")) {
+				barrel_actions[1] += (double)(item_qty_put)/8.0;
+			}else if(currency_type==2 && taken_item_name_lc.equals("hyper crystalline shard")) {
+				barrel_actions[1] += 64*item_qty_put;
+			}else if(currency_type==2 && taken_item_name_lc.equals("compressed crystalline shard")) {
+				barrel_actions[1] += item_qty_put;
+			}else if(currency_type==2 && taken_item_name_lc.equals("crystalline shard")) {
+				barrel_actions[1] += (double)(item_qty_put)/8.0;
+			}else if(currency_type==3 && taken_item_name_lc.equals("hyperchromatic archos ring")) {
+				barrel_actions[1] += 64*item_qty_put;
+			}else if(currency_type==3 && taken_item_name_lc.equals("archos ring")) {
+				barrel_actions[1] += item_qty_put;
+			}else {
+				
+				if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
+					barrel_actions[0] += (double)(item_qty_put)/64.0;
+				}else {
+					barrel_actions[0] += item_qty_put;
+				}
+			}
+		}
 		
 	}
 	
@@ -483,7 +600,7 @@ public class HandledScreenMixin {
 		}
 		
 		if(StonkCompanionClient.fairprice_detection) {
-			detectFairPrice(list_of_items);
+			sendFairPriceMessage(list_of_items);
 		}
 		
 	}
@@ -583,132 +700,17 @@ public class HandledScreenMixin {
 		StonkCompanionClient.mistradeCheck(barrel_pos, false);
 	}
 	
-	private void detectFairPrice(List<Slot> items) {
+	private void sendFairPriceMessage(List<Slot> items) {
 		
-		int barrel_compressed_currency = 0;
+		String[] fair_price_results = StonkCompanionClient.detectFairPrice(items);
+		if (fair_price_results == null) return;
+		double interpolated_price = Double.parseDouble(fair_price_results[0]);
+		int currency_type = (int)Double.parseDouble(fair_price_results[1]);
+		double demand_modifier = Double.parseDouble(fair_price_results[2]);
+		String label = fair_price_results[3];
 		
-		// The assumption is that there is basically just currency and mats in the barrel and 1 sign that says the price.
-		double barrel_mats = -1;
-		
-		int currency_type = -1;
-		double ask_price_compressed = -1;
-		double bid_price_compressed = -1;
-		String label = "";
-		
-		// Assumed it is a barrel or chest so check 27 slots. First pass is to check for sign.
-		for(int i = 0; i < 27; i++) {
-			
-			if(!items.get(i).hasStack()) continue;
-			
-			ItemStack item = items.get(i).getStack();
-			
-			String item_name = "";
-			
-			if(item.getNbt() == null) {
-				continue;
-			}
-			
-			if(!item.getNbt().contains("Monumenta")) {
-
-				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
-				
-				if(item_name.toLowerCase().endsWith("sign")) {
-					// Okay we have a sign. Now to look to see if it has buy sell on it.
-					if (!item.getNbt().contains("plain") || !item.getNbt().getCompound("plain").contains("display") || !item.getNbt().getCompound("plain").getCompound("display").contains("Lore")) {
-						continue;
-					}
-					
-					NbtList sign_info = item.getNbt().getCompound("plain").getCompound("display").getList("Lore", NbtElement.STRING_TYPE);
-					
-					if(sign_info.size() > 2 && sign_info.get(1) != null) {					
-						label = sign_info.get(1).asString().replace(">", "").trim();
-					}
-					
-					for(NbtElement _e : sign_info) {
-						
-						String _sign_line = _e.asString().toLowerCase();
-						
-						int find_ask = _sign_line.indexOf("buy for");
-						int find_bid = _sign_line.indexOf("sell for");
-						
-						if (find_ask != -1) {
-							
-							// We now have the line of text with the buy price.
-							currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
-							
-							ask_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_ask+7));
-							
-						}else if(find_bid != -1) {
-							
-							// We now have the line of text with the sell price.
-							currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
-							bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_bid+8));
-						}
-					}
-					
-					// Break if we have found the sign. Assuming the first found correctly formatted sign is the correct sign. If it isn't. User error.
-					if (currency_type != -1 && ask_price_compressed != -1 && bid_price_compressed != -1) {
-						break;
-					}
-				}
-			}
-		}
-		
-		if (currency_type == -1 || ask_price_compressed == -1 || bid_price_compressed == -1) {
-			return;
-		}
-		
-		for(int i = 0; i < 27; i++) {
-						
-			if(!items.get(i).hasStack()) continue;
-			
-			ItemStack item = items.get(i).getStack();
-			
-			String item_name = "";
-			int item_qty = item.getCount();	
-			
-			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
-				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
-				// StonkCompanionClient.LOGGER.info(item.getItem().getTranslationKey());
-				
-				if(item.getItem().getTranslationKey().endsWith("sign") || item.getItem().getTranslationKey().endsWith("written_book")) {
-					continue;
-				}
-				
-			}else {
-				item_name = item.getNbt().getCompound("plain").getCompound("display").getString("Name");				
-			}
-			
-			double mult = StonkCompanionClient.givenCurrReturnMult(item_name);
-			
-			if(mult == -1) {
-				barrel_mats += item_qty;
-			}else {
-				barrel_compressed_currency += item_qty * mult;
-			}
-		}
-		
-		// Checking for stacks barrels.
-		if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
-			barrel_mats = barrel_mats/64.0;
-		}
-		
-		double spread = ask_price_compressed - bid_price_compressed;
-        double mid = bid_price_compressed + spread / 2;
-        
-        double mats_in_currency = barrel_compressed_currency / mid;
-        double effective_mats = barrel_mats + mats_in_currency;
-        
-        if(effective_mats == 0) {
-        	return;
-        }
-        
-        double demand_modifier = mats_in_currency / effective_mats;
-        double intraspread_factor = demand_modifier * spread;
-        double interpolated_price = bid_price_compressed + intraspread_factor;
-        
-	    String currency_str = "";
-	    String hyper_str = "";
+	    String currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(currency_type);
+	    String hyper_str = StonkCompanionClient.currency_type_to_hyper_text.get(currency_type);
 	        
 	    if (currency_type == 1) {
 	    	hyper_str = "hxp";
@@ -735,8 +737,8 @@ public class HandledScreenMixin {
         }
         
         mc.player.sendMessage(Text.literal(fairprice_msg));
-        
 	}
+
 		
 	private void stonkCompanionCreateCheckpoint(List<Slot> items)
 	{

@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +34,10 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
 
@@ -52,6 +57,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	// Bool
 	public static boolean is_verbose_logging = false;
 	
+	public static final Map<Integer, String> currency_type_to_compressed_text = Map.of(1, "cxp", 2, "ccs", 3, "ar");
+	public static final Map<Integer, String> currency_type_to_hyper_text = Map.of(1, "hxp", 2, "hcs", 3, "har");
+	
 	// Anti-monu flag
 
 	// Checkpoint vars. Probs move elsewhere later.
@@ -64,6 +72,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	// I need to find a better way to do this. Oh well
 	public static boolean fairprice_detection = true;
+	public static boolean did_screen_resize = false;
+	public static double fairprice_val = 0.0;
+	public static String fairprice_currency_str = "";
 	
 	// Shamelessly stolen from UMM.
 	private static final Pattern shardGetterPattern = Pattern.compile(".*<(?<shard>[-\\w\\d]*)>.*");
@@ -72,13 +83,18 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
 	
 	// Mistrade checking :fire:
-	private static int transaction_lifetime = 15*60*20; // Measured in ticks. Thus 15 mins is 15 mins * 60 seconds per minute * 20 ticks per second.
-	public static boolean is_mistrade_checking = false;
+	public static int transaction_lifetime = 15*60*20; // Measured in ticks. Thus 15 mins is 15 mins * 60 seconds per minute * 20 ticks per second.
+	public static boolean is_mistrade_checking = true;
 	public static HashMap<String, HashMap<String, Integer>> barrel_transactions = new HashMap<>();
 	public static HashMap<String, Integer> barrel_timeout = new HashMap<>();
 	public static HashMap<String, Barrel> barrel_prices = new HashMap<>();
+	public static HashMap<String, double[]> barrel_actions = new HashMap<>();
+	public static HashMap<String, Boolean> barrel_transaction_validity = new HashMap<>();
+	public static HashMap<String, String> barrel_transaction_solution = new HashMap<>();
 	public static boolean anti_monu_inv_init = false;
 	public static boolean anti_monu_is_not_barrel = false;
+	public static boolean is_there_barrel_price = false;
+	public static String barrel_pos_found = "";
 	
 	public static String getShard() {
 		if (cachedShard != null && lastUpdateTimeShard + 2000 > System.currentTimeMillis()) {
@@ -168,6 +184,143 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}
 		
 		return amount;
+	}
+	
+	public static String[] detectFairPrice(List<Slot> items) {
+		
+		double barrel_compressed_currency = 0;
+		
+		// The assumption is that there is basically just currency and mats in the barrel and 1 sign that says the price.
+		double barrel_mats = 0;
+		
+		int currency_type = -1;
+		double ask_price_compressed = -1;
+		double bid_price_compressed = -1;
+		String label = "";
+		
+		// Assumed it is a barrel or chest so check 27 slots. First pass is to check for sign.
+		for(int i = 0; i < 27; i++) {
+			
+			if(!items.get(i).hasStack()) continue;
+			
+			ItemStack item = items.get(i).getStack();
+			
+			String item_name = "";
+			
+			if(item.getNbt() == null) {
+				continue;
+			}
+			
+			if(!item.getNbt().contains("Monumenta")) {
+
+				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
+				
+				if(item_name.toLowerCase().endsWith("sign")) {
+					// Okay we have a sign. Now to look to see if it has buy sell on it.
+					if (!item.getNbt().contains("plain") || !item.getNbt().getCompound("plain").contains("display") || !item.getNbt().getCompound("plain").getCompound("display").contains("Lore")) {
+						continue;
+					}
+					
+					NbtList sign_info = item.getNbt().getCompound("plain").getCompound("display").getList("Lore", NbtElement.STRING_TYPE);
+					
+					if(sign_info.size() > 2 && sign_info.get(1) != null) {					
+						label = sign_info.get(1).asString().replace(">", "").trim();
+					}
+					
+					for(NbtElement _e : sign_info) {
+						
+						String _sign_line = _e.asString().toLowerCase();
+						
+						int find_ask = _sign_line.indexOf("buy for");
+						int find_bid = _sign_line.indexOf("sell for");
+						
+						if (find_ask != -1) {
+							
+							// We now have the line of text with the buy price.
+							currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
+							
+							ask_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_ask+7));
+							
+						}else if(find_bid != -1) {
+							
+							// We now have the line of text with the sell price.
+							currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
+							bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_bid+8));
+						}
+					}
+					
+					// Break if we have found the sign. Assuming the first found correctly formatted sign is the correct sign. If it isn't. User error.
+					if (currency_type != -1 && ask_price_compressed != -1 && bid_price_compressed != -1) {
+						break;
+					}
+				}
+			}
+		}
+		
+		if (currency_type == -1 || ask_price_compressed == -1 || bid_price_compressed == -1) {
+			return null;
+		}
+		
+		for(int i = 0; i < 27; i++) {
+						
+			if(!items.get(i).hasStack()) continue;
+			
+			ItemStack item = items.get(i).getStack();
+			
+			String item_name = "";
+			int item_qty = item.getCount();	
+			
+			if(item.getNbt() == null || !item.getNbt().contains("Monumenta")) {
+				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
+				// StonkCompanionClient.LOGGER.info(item.getItem().getTranslationKey());
+				
+				if(item.getItem().getTranslationKey().endsWith("sign") || item.getItem().getTranslationKey().endsWith("written_book")) {
+					continue;
+				}
+				
+			}else {
+				item_name = item.getNbt().getCompound("plain").getCompound("display").getString("Name");				
+			}
+			
+			double mult = StonkCompanionClient.givenCurrReturnMult(item_name);
+			
+			if(mult == -1) {
+				barrel_mats += item_qty;
+			}else {
+				barrel_compressed_currency += item_qty * mult;
+			}
+		}
+		
+		// Checking for stacks barrels.
+		if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
+			barrel_mats = barrel_mats/64.0;
+		}
+		
+		//LOGGER.info("Mats: %.3f".formatted(barrel_mats));
+		//LOGGER.info("Comp: %.3f".formatted(barrel_compressed_currency));
+		
+		double spread = ask_price_compressed - bid_price_compressed;
+		//LOGGER.info("Spread: %.3f".formatted(spread));
+        double mid = bid_price_compressed + spread / 2.0;
+        //LOGGER.info("Mid: %.3f".formatted(mid));
+        
+        double mats_in_currency = barrel_compressed_currency / mid;
+        //LOGGER.info("Mats in currency: %.3f".formatted(mats_in_currency));
+        double effective_mats = barrel_mats + mats_in_currency;
+        //LOGGER.info("Effective mats: %.3f".formatted(effective_mats));
+        
+        if(effective_mats == 0) {
+        	return null;
+        }
+        
+        double demand_modifier = mats_in_currency / effective_mats;
+        //LOGGER.info("Demand modifier: %.3f".formatted(demand_modifier));
+        double intraspread_factor = demand_modifier * spread;
+        //LOGGER.info("intraspread_factor: %.3f".formatted(intraspread_factor));
+        double interpolated_price = bid_price_compressed + intraspread_factor;
+        
+	    return new String[]{interpolated_price+"", currency_type+"", demand_modifier+"", label};
+        
 	}
 	
 	public void writeCheckpoints() {
@@ -293,19 +446,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 			
 		if(valid_transaction && hide_valid) return;
 		
-	    String currency_str = "";
-	    String hyper_str = "";
-	        
-	    if (traded_barrel.currency_type == 1) {
-	    	hyper_str = "hxp";
-	       	currency_str = "cxp";
-	    }else if(traded_barrel.currency_type == 2) {
-	    	hyper_str = "hcs";
-	      	currency_str = "ccs";
-	    }else if(traded_barrel.currency_type == 3) {
-	    	hyper_str = "har";
-	       	currency_str = "ar";
-	    }
+	    String currency_str = currency_type_to_compressed_text.get(traded_barrel.currency_type);
+	    String hyper_str = currency_type_to_hyper_text.get(traded_barrel.currency_type);
 	        
 	    double currency_delta = expected_compressed - actual_compressed;
 	    
@@ -356,6 +498,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 			barrel_transactions.remove(barrel_pos);
 			barrel_prices.remove(barrel_pos);
 			barrel_timeout.remove(barrel_pos);
+			barrel_actions.remove(barrel_pos);
+			barrel_transaction_validity.remove(barrel_pos);
+			barrel_transaction_solution.remove(barrel_pos);
 		}
 	}
 	
@@ -441,7 +586,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 				if(barrel_timeout.get(pos) >= transaction_lifetime) {
 					barrel_transactions.remove(pos);
 					barrel_prices.remove(pos);
-				}
+					barrel_actions.remove(pos);
+					barrel_transaction_solution.remove(pos);
+					barrel_transaction_validity.remove(pos);
+					}
 			}
 			
 			barrel_timeout.entrySet().removeIf(entry -> (entry.getValue() >= transaction_lifetime));
@@ -454,10 +602,14 @@ public class StonkCompanionClient implements ClientModInitializer{
     	
     		last_right_click =  hitResult.getBlockPos();
         
+    		is_there_barrel_price = false;
     		anti_monu = true;
     		anti_monu_inv_init = true;
     		anti_monu_is_not_barrel = false;
-    	
+    		barrel_pos_found = "";
+    		fairprice_val = 0.0;
+    		fairprice_currency_str = "";
+
         	return ActionResult.PASS;
     	});
 		
