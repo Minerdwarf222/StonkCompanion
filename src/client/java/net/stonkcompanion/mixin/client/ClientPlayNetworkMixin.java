@@ -68,7 +68,7 @@ public class ClientPlayNetworkMixin {
 			
 			String[] fair_price_results = StonkCompanionClient.detectFairPrice(list_of_slots);
 			
-			if (fair_price_results == null) {
+			if (fair_price_results == null || !StonkCompanionClient.fairprice_detection) {
 				StonkCompanionClient.fairprice_currency_str = "N/A";
 				StonkCompanionClient.fairprice_val = 0.0;
 			}else {

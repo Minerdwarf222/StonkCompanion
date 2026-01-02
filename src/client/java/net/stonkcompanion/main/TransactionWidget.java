@@ -179,7 +179,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
     public Rectangle getDimension() {
     	
         final int width = 165;
-        final int height = 180;
+        final int height = 170;
         
         int x = ((HandledScreenAccessor) parent).getX() - width;
         int y = ((HandledScreenAccessor) parent).getY();
