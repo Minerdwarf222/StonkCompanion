@@ -68,13 +68,17 @@ public class ClientPlayNetworkMixin {
 			
 			String[] fair_price_results = StonkCompanionClient.detectFairPrice(list_of_slots);
 			
-			if (fair_price_results == null) return;
-			double interpolated_price = Double.parseDouble(fair_price_results[0]);
-			int currency_type = (int)Double.parseDouble(fair_price_results[1]);
-			
-			StonkCompanionClient.fairprice_currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(currency_type);
-
-		    StonkCompanionClient.fairprice_val = interpolated_price;
+			if (fair_price_results == null) {
+				StonkCompanionClient.fairprice_currency_str = "N/A";
+				StonkCompanionClient.fairprice_val = 0.0;
+			}else {
+				double interpolated_price = Double.parseDouble(fair_price_results[0]);
+				int currency_type = (int)Double.parseDouble(fair_price_results[1]);
+				
+				StonkCompanionClient.fairprice_currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(currency_type);
+	
+			    StonkCompanionClient.fairprice_val = interpolated_price;
+			}
 		}
 		
 		if(StonkCompanionClient.is_mistrade_checking) {

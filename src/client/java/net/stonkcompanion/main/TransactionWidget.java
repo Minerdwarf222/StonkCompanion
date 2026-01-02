@@ -118,8 +118,11 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		
 		draw_context.drawTextWithShadow(client.textRenderer, sell_for, dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "Sell For: %s".formatted(given_barrel.bid_str), dimension.x+5, dimension.y+y_diff_text, red_color);
-		y_diff_text += font_height + 1;
-		draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %.2f %s".formatted(StonkCompanionClient.fairprice_val, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+		
+		if(!StonkCompanionClient.fairprice_currency_str.equals("N/A")) {
+			y_diff_text += font_height + 1;
+			draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %.2f %s".formatted(StonkCompanionClient.fairprice_val, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+		}
 		y_diff_text += font_height + 1;
 		draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+y_diff_text, light_blue_color);
