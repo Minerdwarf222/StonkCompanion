@@ -702,6 +702,15 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			}else if(given_command.equals("ToggleVerboseLogging")) {
 	    				context.getSource().sendFeedback(Text.literal(is_verbose_logging ? "[StonkCompanion] Stopped verbose logging." : "[StonkCompanion] Started verbose logging."));
 	    				is_verbose_logging = !is_verbose_logging;	
+	    			}else if(given_command.equals("ClearReports")) {
+	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Clearing all transactions."));    				
+	    				barrel_timeout.clear();
+	    				barrel_transactions.clear();
+	    				barrel_prices.clear();
+	    				barrel_actions.clear();
+	    				barrel_transaction_solution.clear();
+	    				barrel_transaction_validity.clear();
+	    				
 	    			}
 	    			return 1;
 	    		}
