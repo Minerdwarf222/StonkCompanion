@@ -2,9 +2,11 @@ package net.stonkcompanion.main;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +32,7 @@ import net.stonkcompanion.suggestions.StonkCompanionCommandsSuggestions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
@@ -340,6 +343,49 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}
 	}
 	
+	private void writeConfig() {
+		
+		JsonObject config_stuff = new JsonObject();		
+		
+		// Just adding all the config vars.
+		config_stuff.addProperty("mistrade_check", is_mistrade_checking);
+		config_stuff.addProperty("fairprice_detection", fairprice_detection);
+		
+		try (FileWriter writer = new FileWriter(top_dir+"/StonkCompanionConfig.json")){
+			Gson gson = new GsonBuilder().create();
+			gson.toJson(config_stuff, writer);
+			config_stuff = new JsonObject();
+		} catch (IOException e) {
+			LOGGER.error("StonkCompanion failed to create the config json!");
+		}
+		
+	}
+	
+	private void readConfig() {
+		File test_for_json = new File(top_dir+"/StonkCompanionConfig.json");
+
+		if(test_for_json.exists()) {
+
+			try {
+
+				JsonObject test_obj = JsonParser.parseString(Files.readString(Paths.get(top_dir+"/StonkCompanionConfig.json"))).getAsJsonObject();
+
+				if(test_obj.has("mistrade_check")) {
+					is_mistrade_checking = test_obj.get("mistrade_check").getAsBoolean();
+				}
+				
+				if(test_obj.has("fairprice_detection")) {
+					fairprice_detection = test_obj.get("fairprice_detection").getAsBoolean();
+				}
+
+			} catch (IOException e) {
+
+				LOGGER.error("Could not find or read json config file.");
+
+			}
+		}
+	}
+	
 	/*
 	 * As the name implies, this function is to go through every barrel in barrel_transactions and try to detect if any were mistrades.	
 	 */
@@ -572,9 +618,12 @@ public class StonkCompanionClient implements ClientModInitializer{
 				
 				LOGGER.error("StonkCompanion failed to create the StonkCompanion config directory!");
 			}
+		}else {
+			readConfig();
 		}
 		
 		ClientLifecycleEvents.CLIENT_STOPPING.register((client) -> {
+			writeConfig();
 			writeCheckpoints();
 		});
 		
