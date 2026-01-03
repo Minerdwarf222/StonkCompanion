@@ -204,7 +204,7 @@ public class HandledScreenMixin {
 				
 				ItemStack item = list_of_items.get(i).getStack();
 				
-				if(player_item.equals(item.getItem())) {
+				if(ItemStack.canCombine(player_itemstk, item)) {
 					int item_qty = item.getCount();
 					
 					int _taken = (player_itemstk_qty+item_qty <= player_item.getMaxCount()) ? item_qty : player_item.getMaxCount() - player_itemstk_qty;
@@ -213,7 +213,6 @@ public class HandledScreenMixin {
 					player_itemstk_qty += _taken;
 				}
 			}
-			
 			if(item_qty_taken != 0) {
 				onClickInjectHelper(barrel_pos, player_item_name, item_qty_taken, true);
 			}
@@ -236,7 +235,7 @@ public class HandledScreenMixin {
 					
 					ItemStack item = _slot.getStack();
 					
-					if(active_slot_item.equals(item.getItem())) {
+					if(ItemStack.canCombine(active_slot, item)) {
 						int item_qty = item.getCount();
 						
 						int _taken = (active_slot_itemstk_qty+item_qty <= active_slot_item.getMaxCount()) ? active_slot_itemstk_qty : active_slot_item.getMaxCount() - item_qty;
@@ -264,7 +263,8 @@ public class HandledScreenMixin {
 					
 					ItemStack item = _slot.getStack();
 					
-					if(active_slot_item.equals(item.getItem())) {
+					if(ItemStack.canCombine(active_slot, item)) {
+
 						int item_qty = item.getCount();
 						
 						int _taken = (active_slot_itemstk_qty+item_qty <= active_slot_item.getMaxCount()) ? active_slot_itemstk_qty : active_slot_item.getMaxCount() - item_qty;
@@ -308,7 +308,7 @@ public class HandledScreenMixin {
 					String player_item_name = getItemName(player_itemstk);
 					
 					onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);					
-				}else if(!player_itemstk.getItem().equals(active_slot.getItem())) {
+				}else if(!ItemStack.canCombine(player_itemstk, active_slot)) {
 
 					int item_qty_taken = active_slot_itemstk_qty;
 					int item_qty_put = player_itemstk_qty;
@@ -363,7 +363,7 @@ public class HandledScreenMixin {
 					String player_item_name = getItemName(player_itemstk);
 					
 					onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);					
-				}else if(!player_itemstk.getItem().equals(active_slot.getItem())) {
+				}else if(!ItemStack.canCombine(player_itemstk, active_slot)) {
 					
 					int item_qty_taken = active_slot_itemstk_qty;
 					int item_qty_put = player_itemstk_qty;
