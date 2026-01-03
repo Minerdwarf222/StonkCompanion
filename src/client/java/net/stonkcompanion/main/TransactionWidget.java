@@ -162,7 +162,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 				y_diff_text += font_height + 1;
 				draw_context.drawTextWithShadow(client.textRenderer, "Refund period ends in:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 				y_diff_text += font_height + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "%d Minutes %d Seconds".formatted((int)time_left/60, time_left%60), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+				draw_context.drawTextWithShadow(client.textRenderer, "%d:%d".formatted((int)time_left/60, time_left%60), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			}
 			y_diff_text += font_height + 1;
 			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);

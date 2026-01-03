@@ -214,7 +214,9 @@ public class HandledScreenMixin {
 				}
 			}
 			
-			onClickInjectHelper(barrel_pos, player_item_name, item_qty_taken, true);
+			if(item_qty_taken != 0) {
+				onClickInjectHelper(barrel_pos, player_item_name, item_qty_taken, true);
+			}
 		}else if(action_type == SlotActionType.QUICK_MOVE) {
 			
 			if(is_player_inv) {
@@ -316,7 +318,6 @@ public class HandledScreenMixin {
 					
 					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, player_item_name, item_qty_put);					
 				}else {
-					
 					if(active_slot_item.getMaxCount() == active_slot_itemstk_qty) {
 						return;
 					}else if(active_slot_itemstk_qty + player_itemstk_qty <= active_slot_item.getMaxCount()) {
