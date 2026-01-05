@@ -98,7 +98,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		stonk_companion.append(Text.literal("Co").withColor(green_color));
 		stonk_companion.append(Text.literal("mpanion").withColor(light_blue_color));
 		
-		draw_context.drawTextWithShadow(client.textRenderer, stonk_companion, dimension.x+45, dimension.y+y_diff_text, yellow_color);
+		draw_context.drawCenteredTextWithShadow(client.textRenderer, stonk_companion, (int)dimension.getCenterX(), dimension.y+y_diff_text, yellow_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "Stonk", dimension.x+45, dimension.y+y_diff_text, yellow_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "Co", dimension.x+45+client.textRenderer.getWidth("Stonk"), dimension.y+y_diff_text, green_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "mpanion", dimension.x+45+client.textRenderer.getWidth("StonkCo"), dimension.y+y_diff_text, light_blue_color);
@@ -132,10 +132,10 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %d %s %.2f %s".formatted((int)(StonkCompanionClient.fairprice_val/64), StonkCompanionClient.currency_type_to_hyper_text.get(given_barrel.currency_type), StonkCompanionClient.fairprice_val%64, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
 			}*/
 		}
-		y_diff_text += font_height + 1;
-		draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+y_diff_text, light_blue_color);
 		if (StonkCompanionClient.barrel_actions.containsKey(given_barrel.coords) && (StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0] != 0 || StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1] != 0)) {
+			y_diff_text += font_height + 1;
+			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 			y_diff_text += 2 + 1;
 			draw_context.drawTextWithShadow(client.textRenderer, "Recent Interactions:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			if(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0] != 0) {
@@ -151,13 +151,24 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 					draw_context.drawTextWithShadow(client.textRenderer, "%s %d %s %.2f %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", (int)((Math.abs(barrel_actions_money)/64)), StonkCompanionClient.currency_type_to_hyper_text.get(given_barrel.currency_type), Math.abs(barrel_actions_money%64), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 				}
 			}
-			y_diff_text += font_height + 1;
-			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 			// draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+y_diff_text, light_blue_color);
 		}
-		if(StonkCompanionClient.barrel_transaction_validity.containsKey(given_barrel.coords)) {
+		if (time_left != -1) {
+			int seconds_since_last_interaction = (int)StonkCompanionClient.barrel_timeout.get(StonkCompanionClient.barrel_pos_found)/20;
+			ZonedDateTime current_time = ZonedDateTime.now().minusSeconds(seconds_since_last_interaction);	
+			y_diff_text += font_height + 1;
+			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 			y_diff_text += 2 + 1;
-			draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+			draw_context.drawTextWithShadow(client.textRenderer, "Last Interaction: %s".formatted(current_time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+			y_diff_text += font_height + 1;
+			draw_context.drawTextWithShadow(client.textRenderer, "Refund period ends in: %d:%d".formatted((int)time_left/60, time_left%60), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+		}
+		if(StonkCompanionClient.barrel_transaction_validity.containsKey(given_barrel.coords)) {
+			y_diff_text += font_height + 1;
+			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
+			y_diff_text += 2 + 1;
+			draw_context.drawCenteredTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
+			//draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			if(!StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) && StonkCompanionClient.barrel_transaction_solution.containsKey(given_barrel.coords)) {
 				y_diff_text += font_height + 1;
 				draw_context.drawTextWithShadow(client.textRenderer, "Suggested Fix:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
@@ -166,16 +177,6 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 			}
 			//y_diff_text += font_height + 1;
 			//draw_context.drawTextWithShadow(client.textRenderer, "OR Take / Add Y", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			if (time_left != -1) {
-				int seconds_since_last_interaction = (int)StonkCompanionClient.barrel_timeout.get(StonkCompanionClient.barrel_pos_found)/20;
-				ZonedDateTime current_time = ZonedDateTime.now().minusSeconds(seconds_since_last_interaction);	
-				y_diff_text += font_height + 1;
-				draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
-				y_diff_text += 2 + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "Last Interaction: %s".formatted(current_time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-				y_diff_text += font_height + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "Refund period ends in: %d:%d".formatted((int)time_left/60, time_left%60), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			}
 			if(!StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords)) {
 				y_diff_text += font_height + 1;
 				draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
@@ -184,10 +185,9 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 				y_diff_text += font_height + 1;
 				draw_context.drawTextWithShadow(client.textRenderer, "/StonkCompanion ClearReports", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			}
-			y_diff_text += font_height + 1;
-			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 		}
-		
+		y_diff_text += font_height + 1;
+		draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);		
 	}
 	
     public Rectangle getDimension() {
