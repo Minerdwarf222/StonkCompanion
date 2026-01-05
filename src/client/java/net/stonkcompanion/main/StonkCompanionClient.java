@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.joml.Math;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +99,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static boolean anti_monu_is_not_barrel = false;
 	public static boolean is_there_barrel_price = false;
 	public static String barrel_pos_found = "";
+	public static boolean is_compressed_only = false;
 	
 	public static String getShard() {
 		if (cachedShard != null && lastUpdateTimeShard + 2000 > System.currentTimeMillis()) {
@@ -350,6 +352,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		// Just adding all the config vars.
 		config_stuff.addProperty("mistrade_check", is_mistrade_checking);
 		config_stuff.addProperty("fairprice_detection", fairprice_detection);
+		config_stuff.addProperty("is_compressed_only", is_compressed_only);
 		
 		try (FileWriter writer = new FileWriter(top_dir+"/StonkCompanionConfig.json")){
 			Gson gson = new GsonBuilder().create();
@@ -376,6 +379,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 				
 				if(test_obj.has("fairprice_detection")) {
 					fairprice_detection = test_obj.get("fairprice_detection").getAsBoolean();
+				}
+				
+				if(test_obj.has("compressed_only")) {
+					is_compressed_only = test_obj.get("is_compressed_only").getAsBoolean();
 				}
 
 			} catch (IOException e) {
@@ -531,10 +538,12 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    mc.player.sendMessage(Text.literal("Buy: %.3f %s (%s)".formatted(traded_barrel.compressed_ask_price, currency_str, traded_barrel.ask_price)));
 	    mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
 	    mc.player.sendMessage(Text.literal("%s: %.3f".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
-	    mc.player.sendMessage(Text.literal("%s: %.3f %s (%d %s %.2f %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str, actual_hyper_amount, hyper_str, actual_compressed_amount, currency_str)));
+	    mc.player.sendMessage(Text.literal("%s: %.3f %s (%d %s %.3f %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str, actual_hyper_amount, hyper_str, actual_compressed_amount, currency_str)));
 	    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (other_items))))));
 	    if(currency_delta == 0) mc.player.sendMessage(Text.literal("Valid Transaction"));
-	    if(currency_delta != 0) mc.player.sendMessage(Text.literal("Correction amount: %s %.3f %s (%d %s %.2f %s)".formatted(correction_dir, Math.abs(currency_delta), currency_str, corrective_hyper_amount, hyper_str, corrective_compressed_amount, currency_str)));
+	    if(currency_delta != 0) {
+		    mc.player.sendMessage(Text.literal("Correction amount: %s %.3f %s (%d %s %.3f %s)".formatted(correction_dir, Math.abs(currency_delta), currency_str, corrective_hyper_amount, hyper_str, corrective_compressed_amount, currency_str)));
+	    }
 	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta))));
 	    mc.player.sendMessage(Text.literal("Time since last log: %ds/%ds".formatted(barrel_timeout.get(barrel_pos)/20, transaction_lifetime/20)));
 	    if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
@@ -760,6 +769,39 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    				barrel_transaction_solution.clear();
 	    				barrel_transaction_validity.clear();
 	    				
+	    			}else if(given_command.equals("ToggleCompressed")) {
+	    				context.getSource().sendFeedback(Text.literal(is_compressed_only ? "[StonkCompanion] Showing hyper and compressed now.." : "[StonkCompanion] Showing only in compressed."));
+	    				is_compressed_only = !is_compressed_only;
+	    				
+	    				for(String barrel_pos : barrel_transaction_solution.keySet()) {
+	    				
+	    					if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) continue;
+	    					if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) continue;
+	    					
+	    					Barrel traded_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+	    					double other_items = StonkCompanionClient.barrel_actions.get(barrel_pos)[0];
+	    					double actual_compressed = StonkCompanionClient.barrel_actions.get(barrel_pos)[1];
+	    					
+	    					double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
+	    					
+	    				    double currency_delta = expected_compressed - actual_compressed;
+	    				    
+	    				    String currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(traded_barrel.currency_type);
+	    				    String hyper_str = StonkCompanionClient.currency_type_to_hyper_text.get(traded_barrel.currency_type);
+	    				    
+	    				    // Bounds check.
+	    				    if(currency_delta < 0.0005 && currency_delta > -0.0005) currency_delta = 0;
+	
+	    				    if(currency_delta != 0) {
+	    				    	double abs_currency_delta = Math.abs(currency_delta);
+	    				    	// TODO: Turn this into an array of two strings.
+	    				    	if(StonkCompanionClient.is_compressed_only) {
+	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", Math.abs(currency_delta), currency_str));	
+	    				    	}else {
+	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, abs_currency_delta%64, currency_str));
+	    				    	}
+	    				    }
+	    				}    				    
 	    			}
 	    			return 1;
 	    		}

@@ -37,6 +37,9 @@ public class StonkCompanionCommandsSuggestions {
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"clearreports")) {
 			builder.suggest("ClearReports");
 		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglecompressed")) {
+			builder.suggest("ToggleCompressed");
+		}
 		
 		return builder.buildFuture();
 	}

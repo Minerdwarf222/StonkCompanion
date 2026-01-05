@@ -472,15 +472,8 @@ public class HandledScreenMixin {
 		
 	    double currency_delta = expected_compressed - actual_compressed;
 	    
-	    String currency_str = "";
-	    
-	    if (traded_barrel.currency_type == 1) {
-	       	currency_str = "cxp";
-	    }else if(traded_barrel.currency_type == 2) {
-	      	currency_str = "ccs";
-	    }else if(traded_barrel.currency_type == 3) {
-	       	currency_str = "ar";
-	    }
+	    String currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(traded_barrel.currency_type);
+	    String hyper_str = StonkCompanionClient.currency_type_to_hyper_text.get(traded_barrel.currency_type);
 	    
 	    // Bounds check.
 	    if(currency_delta < 0.0005 && currency_delta > -0.0005) currency_delta = 0;
@@ -489,8 +482,14 @@ public class HandledScreenMixin {
 	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, true);
 	    	StonkCompanionClient.barrel_transaction_solution.remove(barrel_pos);
 	    }else if(currency_delta != 0) {
-	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, false);	    	
-	    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", Math.abs(currency_delta), currency_str));
+	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, false);	
+	    	double abs_currency_delta = Math.abs(currency_delta);
+	    	// TODO: Turn this into an array of two strings.
+	    	if(StonkCompanionClient.is_compressed_only) {
+		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", Math.abs(currency_delta), currency_str));	
+	    	}else {
+		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, abs_currency_delta%64, currency_str));
+	    	}
 	    }
 	}
 	

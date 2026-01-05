@@ -28,6 +28,9 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
     private final List<Selectable> selectables = new ArrayList<>();
     
     private final Screen parent;
+    
+    private final int background_rect_width = 165;
+    private final int background_rect_height = 165;
 	
     public void init() {
     	clear();
@@ -122,6 +125,12 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		if(!StonkCompanionClient.fairprice_currency_str.equals("N/A")) {
 			y_diff_text += font_height + 1;
 			draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %.2f %s".formatted(StonkCompanionClient.fairprice_val, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+			/* Non-compressed is too long.
+			if(StonkCompanionClient.is_compressed_only) {
+				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %.2f %s".formatted(StonkCompanionClient.fairprice_val, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+			}else {
+				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %d %s %.2f %s".formatted((int)(StonkCompanionClient.fairprice_val/64), StonkCompanionClient.currency_type_to_hyper_text.get(given_barrel.currency_type), StonkCompanionClient.fairprice_val%64, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+			}*/
 		}
 		y_diff_text += font_height + 1;
 		draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
@@ -135,7 +144,12 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 			}
 			if(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1] != 0) {
 				y_diff_text += font_height + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "%s %.2f %s".formatted((StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1] < 0) ? "Removed" : "Added", Math.abs(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1]), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+				double barrel_actions_money = StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1];
+				if(StonkCompanionClient.is_compressed_only) {
+					draw_context.drawTextWithShadow(client.textRenderer, "%s %.2f %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", Math.abs(barrel_actions_money), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+				}else {
+					draw_context.drawTextWithShadow(client.textRenderer, "%s %d %s %.2f %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", (int)((Math.abs(barrel_actions_money)/64)), StonkCompanionClient.currency_type_to_hyper_text.get(given_barrel.currency_type), Math.abs(barrel_actions_money%64), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+				}
 			}
 			y_diff_text += font_height + 1;
 			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
@@ -162,12 +176,14 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 				y_diff_text += font_height + 1;
 				draw_context.drawTextWithShadow(client.textRenderer, "Refund period ends in: %d:%d".formatted((int)time_left/60, time_left%60), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			}
-			y_diff_text += font_height + 1;
-			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
-			y_diff_text += 2 + 1;
-			draw_context.drawTextWithShadow(client.textRenderer, "If this report is in error, type:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			y_diff_text += font_height + 1;
-			draw_context.drawTextWithShadow(client.textRenderer, "/StonkCompanion ClearReports", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+			if(!StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords)) {
+				y_diff_text += font_height + 1;
+				draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
+				y_diff_text += 2 + 1;
+				draw_context.drawTextWithShadow(client.textRenderer, "If this report is in error, type:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+				y_diff_text += font_height + 1;
+				draw_context.drawTextWithShadow(client.textRenderer, "/StonkCompanion ClearReports", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+			}
 			y_diff_text += font_height + 1;
 			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 		}
@@ -175,14 +191,11 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 	}
 	
     public Rectangle getDimension() {
-    	
-        final int width = 165;
-        final int height = 170;
         
-        int x = ((HandledScreenAccessor) parent).getX() - width;
+        int x = ((HandledScreenAccessor) parent).getX() - background_rect_width;
         int y = ((HandledScreenAccessor) parent).getY();
 
-        return new Rectangle(x, y, width, height);
+        return new Rectangle(x, y, background_rect_width, background_rect_height);
     }
 	
 	public void renderBackground(DrawContext drawContext) {
