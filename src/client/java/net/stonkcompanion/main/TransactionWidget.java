@@ -17,6 +17,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.stonkcompanion.mixin.client.HandledScreenAccessor;
 
 public class TransactionWidget extends AbstractParentElement implements Drawable, Selectable, Element{
@@ -167,7 +168,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 			y_diff_text += font_height + 1;
 			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 			y_diff_text += 2 + 1;
-			draw_context.drawCenteredTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
+			draw_context.drawCenteredTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? Text.literal("Valid").formatted(Formatting.BOLD) : Text.literal("Mistrade Detected").formatted(Formatting.BOLD), (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
 			//draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			if(!StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) && StonkCompanionClient.barrel_transaction_solution.containsKey(given_barrel.coords)) {
 				y_diff_text += font_height + 1;
