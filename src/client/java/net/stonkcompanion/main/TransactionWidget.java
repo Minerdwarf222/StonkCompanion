@@ -125,7 +125,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		
 		if(!StonkCompanionClient.fairprice_currency_str.equals("N/A")) {
 			y_diff_text += font_height + 1;
-			draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %.2f %s".formatted(StonkCompanionClient.fairprice_val, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+			draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s %s".formatted(StonkCompanionClient.df1.format(StonkCompanionClient.fairprice_val), StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
 			/* Non-compressed is too long.
 			if(StonkCompanionClient.is_compressed_only) {
 				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %.2f %s".formatted(StonkCompanionClient.fairprice_val, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
@@ -141,15 +141,15 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 			draw_context.drawTextWithShadow(client.textRenderer, "Recent Interactions:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			if(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0] != 0) {
 				y_diff_text += font_height + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "%s %.2f Mat%s".formatted((StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0] < 0) ? "Removed" : "Added", Math.abs(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0]), Math.abs(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0]) == 1 ? "" : "s"), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+				draw_context.drawTextWithShadow(client.textRenderer, "%s %s Mat%s".formatted((StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0] < 0) ? "Removed" : "Added", StonkCompanionClient.df1.format(Math.abs(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0])), Math.abs(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0]) == 1 ? "" : "s"), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			}
 			if(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1] != 0) {
 				y_diff_text += font_height + 1;
 				double barrel_actions_money = StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1];
 				if(StonkCompanionClient.is_compressed_only) {
-					draw_context.drawTextWithShadow(client.textRenderer, "%s %.2f %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", Math.abs(barrel_actions_money), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+					draw_context.drawTextWithShadow(client.textRenderer, "%s %s %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", StonkCompanionClient.df1.format(Math.abs(barrel_actions_money)), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 				}else {
-					draw_context.drawTextWithShadow(client.textRenderer, "%s %d %s %.2f %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", (int)((Math.abs(barrel_actions_money)/64)), StonkCompanionClient.currency_type_to_hyper_text.get(given_barrel.currency_type), Math.abs(barrel_actions_money%64), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+					draw_context.drawTextWithShadow(client.textRenderer, "%s %d %s %s %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", (int)((Math.abs(barrel_actions_money)/64)), StonkCompanionClient.currency_type_to_hyper_text.get(given_barrel.currency_type), StonkCompanionClient.df1.format(Math.abs(barrel_actions_money%64)), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 				}
 			}
 			// draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+y_diff_text, light_blue_color);

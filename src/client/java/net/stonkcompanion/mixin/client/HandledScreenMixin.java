@@ -486,9 +486,9 @@ public class HandledScreenMixin {
 	    	double abs_currency_delta = Math.abs(currency_delta);
 	    	// TODO: Turn this into an array of two strings.
 	    	if(StonkCompanionClient.is_compressed_only) {
-		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", Math.abs(currency_delta), currency_str));	
+		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
 	    	}else {
-		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, abs_currency_delta%64, currency_str));
+		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
 	    	}
 	    }
 	}
@@ -728,7 +728,7 @@ public class HandledScreenMixin {
         
         // TODO: Add label
         MinecraftClient mc = MinecraftClient.getInstance();
-        String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %.1f %s (%d %s %.1f %s).", StonkCompanionClient.categoreyMaker(label), interpolated_price, currency_str, interpolated_hyper_amount, hyper_str, interpolated_compressed_amount, currency_str);
+        String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(interpolated_price), currency_str, interpolated_hyper_amount, hyper_str, StonkCompanionClient.df1.format(interpolated_compressed_amount), currency_str);
         
         if(demand_modifier <= 0.005) {
         	fairprice_msg = "[StonkCompanion] Look in lower barrel.";

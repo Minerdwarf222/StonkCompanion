@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -100,6 +101,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static boolean is_there_barrel_price = false;
 	public static String barrel_pos_found = "";
 	public static boolean is_compressed_only = false;
+	public static final DecimalFormat df1 = new DecimalFormat( "#.###" );
 	
 	public static String getShard() {
 		if (cachedShard != null && lastUpdateTimeShard + 2000 > System.currentTimeMillis()) {
@@ -431,13 +433,13 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}else if(traded_item_lc.equals("concentrated experience")) {
 				r1_compressed += item_qty;
 			}else if(traded_item_lc.equals("experience bottle")) {
-				r1_compressed += item_qty/8;
+				r1_compressed += item_qty/8.0;
 			}else if(traded_item_lc.equals("hyper crystalline shard")) {
 				r2_compressed += 64*item_qty;
 			}else if(traded_item_lc.equals("compressed crystalline shard")) {
 				r2_compressed += item_qty;
 			}else if(traded_item_lc.equals("crystalline shard")) {
-				r2_compressed += item_qty/8;
+				r2_compressed += item_qty/8.0;
 			}else if(traded_item_lc.equals("hyperchromatic archos ring")) {
 				r3_compressed += 64*item_qty;
 			}else if(traded_item_lc.equals("archos ring")) {
@@ -535,14 +537,14 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    									
 	    mc.player.sendMessage(Text.literal("---[StonkCompanion]---"));
 	    mc.player.sendMessage(Text.literal("%s (%s)".formatted(traded_barrel.label, barrel_pos)));
-	    mc.player.sendMessage(Text.literal("Buy: %.3f %s (%s)".formatted(traded_barrel.compressed_ask_price, currency_str, traded_barrel.ask_price)));
-	    mc.player.sendMessage(Text.literal("Sell: %.3f %s (%s)".formatted(traded_barrel.compressed_bid_price, currency_str, traded_barrel.bid_price)));
-	    mc.player.sendMessage(Text.literal("%s: %.3f".formatted((other_items < 0) ? "Bought" : "Sold", Math.abs(other_items))));
-	    mc.player.sendMessage(Text.literal("%s: %.3f %s (%d %s %.3f %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", Math.abs(actual_compressed), currency_str, actual_hyper_amount, hyper_str, actual_compressed_amount, currency_str)));
-	    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %.3f".formatted((Math.abs(actual_compressed / (other_items))))));
+	    mc.player.sendMessage(Text.literal("Buy: %s %s (%s)".formatted(df1.format(traded_barrel.compressed_ask_price), currency_str, traded_barrel.ask_price)));
+	    mc.player.sendMessage(Text.literal("Sell: %s %s (%s)".formatted(df1.format(traded_barrel.compressed_bid_price), currency_str, traded_barrel.bid_price)));
+	    mc.player.sendMessage(Text.literal("%s: %s".formatted((other_items < 0) ? "Bought" : "Sold", df1.format(Math.abs(other_items)))));
+	    mc.player.sendMessage(Text.literal("%s: %s %s (%d %s %s %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", df1.format(Math.abs(actual_compressed)), currency_str, actual_hyper_amount, hyper_str, df1.format(actual_compressed_amount), currency_str)));
+	    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %s".formatted(df1.format(Math.abs(actual_compressed / (other_items))))));
 	    if(currency_delta == 0) mc.player.sendMessage(Text.literal("Valid Transaction"));
 	    if(currency_delta != 0) {
-		    mc.player.sendMessage(Text.literal("Correction amount: %s %.3f %s (%d %s %.3f %s)".formatted(correction_dir, Math.abs(currency_delta), currency_str, corrective_hyper_amount, hyper_str, corrective_compressed_amount, currency_str)));
+		    mc.player.sendMessage(Text.literal("Correction amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, df1.format(Math.abs(currency_delta)), currency_str, corrective_hyper_amount, hyper_str, df1.format(corrective_compressed_amount), currency_str)));
 	    }
 	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta))));
 	    mc.player.sendMessage(Text.literal("Time since last log: %ds/%ds".formatted(barrel_timeout.get(barrel_pos)/20, transaction_lifetime/20)));
@@ -796,9 +798,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    				    	double abs_currency_delta = Math.abs(currency_delta);
 	    				    	// TODO: Turn this into an array of two strings.
 	    				    	if(StonkCompanionClient.is_compressed_only) {
-	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", Math.abs(currency_delta), currency_str));	
+	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
 	    				    	}else {
-	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, abs_currency_delta%64, currency_str));
+	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %.3f %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
 	    				    	}
 	    				    }
 	    				}    				    
