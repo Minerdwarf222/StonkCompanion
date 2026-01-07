@@ -125,7 +125,13 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		
 		if(!StonkCompanionClient.fairprice_currency_str.equals("N/A")) {
 			y_diff_text += font_height + 1;
-			draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s %s".formatted(StonkCompanionClient.df1.format(StonkCompanionClient.fairprice_val), StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+			if(StonkCompanionClient.fairprice_val <= given_barrel.compressed_bid_price*1.01) {
+				draw_context.drawTextWithShadow(client.textRenderer, "Look in lower barrel.", dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+			}else if(StonkCompanionClient.fairprice_val >= given_barrel.compressed_ask_price*0.99) {
+				draw_context.drawTextWithShadow(client.textRenderer, "Look in higher barrel.", dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+			}else {
+				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s %s".formatted(StonkCompanionClient.df1.format(StonkCompanionClient.fairprice_val), StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+			}
 			/* Non-compressed is too long.
 			if(StonkCompanionClient.is_compressed_only) {
 				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %.2f %s".formatted(StonkCompanionClient.fairprice_val, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
@@ -168,7 +174,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 			y_diff_text += font_height + 1;
 			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
 			y_diff_text += 2 + 1;
-			draw_context.drawCenteredTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? Text.literal("Valid").formatted(Formatting.BOLD) : Text.literal("Mistrade Detected").formatted(Formatting.BOLD), (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
+			draw_context.drawCenteredTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? Text.literal("Valid Trade").formatted(Formatting.BOLD) : Text.literal("Invalid Trade").formatted(Formatting.BOLD), (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
 			//draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
 			if(!StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) && StonkCompanionClient.barrel_transaction_solution.containsKey(given_barrel.coords)) {
 				y_diff_text += font_height + 1;
