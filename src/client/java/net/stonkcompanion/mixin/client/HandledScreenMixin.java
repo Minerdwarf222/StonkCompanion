@@ -730,13 +730,15 @@ public class HandledScreenMixin {
         MinecraftClient mc = MinecraftClient.getInstance();
         String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(interpolated_price), currency_str, interpolated_hyper_amount, hyper_str, StonkCompanionClient.df1.format(interpolated_compressed_amount), currency_str);
         
-        if(demand_modifier <= 0.005) {
-        	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
-        }else if(demand_modifier >= 0.995) {
-        	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
+        if(StonkCompanionClient.is_showing_text) {
+	        if(demand_modifier <= 0.005) {
+	        	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
+	        }else if(demand_modifier >= 0.995) {
+	        	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
+	        }
+	        
+	        mc.player.sendMessage(Text.literal(fairprice_msg));
         }
-        
-        mc.player.sendMessage(Text.literal(fairprice_msg));
 	}
 
 		

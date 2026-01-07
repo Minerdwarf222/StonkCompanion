@@ -61,6 +61,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	// Bool
 	public static boolean is_verbose_logging = false;
+	public static boolean is_showing_text = true;
+	public static boolean is_showing_gui = true;
 	
 	public static final Map<Integer, String> currency_type_to_compressed_text = Map.of(1, "cxp", 2, "ccs", 3, "ar");
 	public static final Map<Integer, String> currency_type_to_hyper_text = Map.of(1, "hxp", 2, "hcs", 3, "har");
@@ -355,6 +357,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 		config_stuff.addProperty("mistrade_check", is_mistrade_checking);
 		config_stuff.addProperty("fairprice_detection", fairprice_detection);
 		config_stuff.addProperty("is_compressed_only", is_compressed_only);
+		config_stuff.addProperty("is_showing_text", is_showing_text);
+		config_stuff.addProperty("is_showing_gui", is_showing_gui);
 		
 		try (FileWriter writer = new FileWriter(top_dir+"/StonkCompanionConfig.json")){
 			Gson gson = new GsonBuilder().create();
@@ -383,8 +387,16 @@ public class StonkCompanionClient implements ClientModInitializer{
 					fairprice_detection = test_obj.get("fairprice_detection").getAsBoolean();
 				}
 				
-				if(test_obj.has("compressed_only")) {
+				if(test_obj.has("is_compressed_only")) {
 					is_compressed_only = test_obj.get("is_compressed_only").getAsBoolean();
+				}
+				
+				if(test_obj.has("is_showing_text")) {
+					is_showing_text = test_obj.get("is_showing_text").getAsBoolean();
+				}
+				
+				if(test_obj.has("is_showing_gui")) {
+					is_showing_gui = test_obj.get("is_showing_gui").getAsBoolean();
 				}
 
 			} catch (IOException e) {
@@ -534,22 +546,26 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    String correction_dir = (currency_delta < 0) ? "Take out" : "Put in";
 	        
 	    MinecraftClient mc = MinecraftClient.getInstance();
-	    									
-	    mc.player.sendMessage(Text.literal("---[StonkCompanion]---"));
-	    mc.player.sendMessage(Text.literal("%s (%s)".formatted(traded_barrel.label, barrel_pos)));
-	    mc.player.sendMessage(Text.literal("Buy: %s %s (%s)".formatted(df1.format(traded_barrel.compressed_ask_price), currency_str, traded_barrel.ask_price)));
-	    mc.player.sendMessage(Text.literal("Sell: %s %s (%s)".formatted(df1.format(traded_barrel.compressed_bid_price), currency_str, traded_barrel.bid_price)));
-	    mc.player.sendMessage(Text.literal("%s: %s".formatted((other_items < 0) ? "Bought" : "Sold", df1.format(Math.abs(other_items)))));
-	    mc.player.sendMessage(Text.literal("%s: %s %s (%d %s %s %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", df1.format(Math.abs(actual_compressed)), currency_str, actual_hyper_amount, hyper_str, df1.format(actual_compressed_amount), currency_str)));
-	    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %s".formatted(df1.format(Math.abs(actual_compressed / (other_items))))));
-	    if(currency_delta == 0) mc.player.sendMessage(Text.literal("Valid Transaction"));
-	    if(currency_delta != 0) {
-		    mc.player.sendMessage(Text.literal("Correction amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, df1.format(Math.abs(currency_delta)), currency_str, corrective_hyper_amount, hyper_str, df1.format(corrective_compressed_amount), currency_str)));
+	    
+	    if(currency_delta != 0)mc.player.sendMessage(Text.literal("[StonkCompanion] Mistrade detected in " + traded_barrel.label));
+	    
+	    if(is_showing_text) {
+		    mc.player.sendMessage(Text.literal("---[StonkCompanion]---"));
+		    mc.player.sendMessage(Text.literal("%s (%s)".formatted(traded_barrel.label, barrel_pos)));
+		    mc.player.sendMessage(Text.literal("Buy: %s %s (%s)".formatted(df1.format(traded_barrel.compressed_ask_price), currency_str, traded_barrel.ask_price)));
+		    mc.player.sendMessage(Text.literal("Sell: %s %s (%s)".formatted(df1.format(traded_barrel.compressed_bid_price), currency_str, traded_barrel.bid_price)));
+		    mc.player.sendMessage(Text.literal("%s: %s".formatted((other_items < 0) ? "Bought" : "Sold", df1.format(Math.abs(other_items)))));
+		    mc.player.sendMessage(Text.literal("%s: %s %s (%d %s %s %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", df1.format(Math.abs(actual_compressed)), currency_str, actual_hyper_amount, hyper_str, df1.format(actual_compressed_amount), currency_str)));
+		    if(other_items!=0) mc.player.sendMessage(Text.literal("Unit Price: %s".formatted(df1.format(Math.abs(actual_compressed / (other_items))))));
+		    if(currency_delta == 0) mc.player.sendMessage(Text.literal("Valid Transaction"));
+		    if(currency_delta != 0) {
+			    mc.player.sendMessage(Text.literal("Correction amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, df1.format(Math.abs(currency_delta)), currency_str, corrective_hyper_amount, hyper_str, df1.format(corrective_compressed_amount), currency_str)));
+		    }
+		    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta))));
+		    mc.player.sendMessage(Text.literal("Time since last log: %ds/%ds".formatted(barrel_timeout.get(barrel_pos)/20, transaction_lifetime/20)));
+		    if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
+		    mc.player.sendMessage(Text.literal("--------------------"));
 	    }
-	    if(mats_delta != 0) mc.player.sendMessage(Text.literal("(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta))));
-	    mc.player.sendMessage(Text.literal("Time since last log: %ds/%ds".formatted(barrel_timeout.get(barrel_pos)/20, transaction_lifetime/20)));
-	    if(wrong_currency) mc.player.sendMessage(Text.literal("Wrong currency was used!"));
-	    mc.player.sendMessage(Text.literal("--------------------"));
 	    
 	    if(other_items == 0 && currency_delta == 0 && !wrong_currency) {
 			barrel_transactions.remove(barrel_pos);
@@ -762,6 +778,12 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			}else if(given_command.equals("ToggleVerboseLogging")) {
 	    				context.getSource().sendFeedback(Text.literal(is_verbose_logging ? "[StonkCompanion] Stopped verbose logging." : "[StonkCompanion] Started verbose logging."));
 	    				is_verbose_logging = !is_verbose_logging;	
+	    			}else if(given_command.equals("ToggleShowingText")) {
+	    				context.getSource().sendFeedback(Text.literal(is_showing_text ? "[StonkCompanion] Stopped printing mistrade and fairprice text." : "[StonkCompanion] Will print mistrade and fairprice text."));
+	    				is_showing_text = !is_showing_text;	
+	    			}else if(given_command.equals("ToggleShowingGui")) {
+	    				context.getSource().sendFeedback(Text.literal(is_showing_gui ? "[StonkCompanion] Stopped showing barrel gui." : "[StonkCompanion] Showing barrel gui."));
+	    				is_showing_gui = !is_showing_gui;	
 	    			}else if(given_command.equals("ClearReports")) {
 	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Clearing all transactions."));    				
 	    				barrel_timeout.clear();

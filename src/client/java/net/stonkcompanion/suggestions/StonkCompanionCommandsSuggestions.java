@@ -40,6 +40,12 @@ public class StonkCompanionCommandsSuggestions {
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglecompressed")) {
 			builder.suggest("ToggleCompressed");
 		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"toggleshowingtext")) {
+			builder.suggest("ToggleShowingText");
+		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"toggleshowinggui")) {
+			builder.suggest("ToggleShowingGui");
+		}
 		
 		return builder.buildFuture();
 	}

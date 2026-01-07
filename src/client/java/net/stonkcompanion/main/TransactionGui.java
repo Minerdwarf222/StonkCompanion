@@ -16,7 +16,7 @@ public class TransactionGui {
 	public boolean shouldRender() {
 		
 		//StonkCompanionClient.LOGGER.warn("Should Render?");
-		
+		if(!StonkCompanionClient.is_showing_gui) return false;
 		if(!StonkCompanionClient.is_mistrade_checking) return false;
 		if(!StonkCompanionClient.getShard().equals("plots")) return false;
 		if(!(MinecraftClient.getInstance().currentScreen instanceof GenericContainerScreen)) return false;
