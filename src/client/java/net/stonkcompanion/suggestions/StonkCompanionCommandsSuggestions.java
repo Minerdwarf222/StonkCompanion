@@ -46,6 +46,9 @@ public class StonkCompanionCommandsSuggestions {
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"toggleshowinggui")) {
 			builder.suggest("ToggleShowingGui");
 		}
+		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglehavingoffhandswapon")) {
+			builder.suggest("ToggleHavingOffhandSwapOn");
+		}
 		
 		return builder.buildFuture();
 	}

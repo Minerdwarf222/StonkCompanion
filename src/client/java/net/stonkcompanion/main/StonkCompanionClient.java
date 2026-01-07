@@ -104,6 +104,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static String barrel_pos_found = "";
 	public static boolean is_compressed_only = false;
 	public static final DecimalFormat df1 = new DecimalFormat( "#.###" );
+	public static boolean has_offhandswap_off = false;
 	
 	public static String getShard() {
 		if (cachedShard != null && lastUpdateTimeShard + 2000 > System.currentTimeMillis()) {
@@ -359,6 +360,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		config_stuff.addProperty("is_compressed_only", is_compressed_only);
 		config_stuff.addProperty("is_showing_text", is_showing_text);
 		config_stuff.addProperty("is_showing_gui", is_showing_gui);
+		config_stuff.addProperty("offhand_swap", has_offhandswap_off);
 		
 		try (FileWriter writer = new FileWriter(top_dir+"/StonkCompanionConfig.json")){
 			Gson gson = new GsonBuilder().create();
@@ -397,6 +399,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 				
 				if(test_obj.has("is_showing_gui")) {
 					is_showing_gui = test_obj.get("is_showing_gui").getAsBoolean();
+				}
+				
+				if(test_obj.has("offhand_swap")){
+					has_offhandswap_off = test_obj.get("offhand_swap").getAsBoolean();
 				}
 
 			} catch (IOException e) {
@@ -784,6 +790,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			}else if(given_command.equals("ToggleShowingGui")) {
 	    				context.getSource().sendFeedback(Text.literal(is_showing_gui ? "[StonkCompanion] Stopped showing barrel gui." : "[StonkCompanion] Showing barrel gui."));
 	    				is_showing_gui = !is_showing_gui;	
+	    				
+	    			}else if(given_command.equals("ToggleHavingOffhandSwapOn")) {
+	    				context.getSource().sendFeedback(Text.literal(has_offhandswap_off ? "[StonkCompanion] Registering that offhand swap is allowed in peb." : "[StonkCompanion] Registering that offhand swap is not allowed in peb."));
+	    				has_offhandswap_off = !has_offhandswap_off;	
 	    			}else if(given_command.equals("ClearReports")) {
 	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Clearing all transactions."));    				
 	    				barrel_timeout.clear();

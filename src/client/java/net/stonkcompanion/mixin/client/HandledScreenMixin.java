@@ -186,9 +186,9 @@ public class HandledScreenMixin {
 		if(StonkCompanionClient.is_verbose_logging) StonkCompanionClient.LOGGER.info(player_inv + " slot. Slot ID: " + slot_id + " Button: " + button + " Action Type: " + action_type.name() + " Player Cursor: " + player_item_str + " Active Slot Item: " + active_item_str);
 
 		// Ignore the action if it is just two empty stacks.
-		if (player_itemstk.isEmpty() && !slot.hasStack()) {
+		/* if (player_itemstk.isEmpty() && !slot.hasStack()) {
 			return;
-		}
+		}*/
 		
 		if(action_type == SlotActionType.PICKUP_ALL) {
 			
@@ -245,7 +245,9 @@ public class HandledScreenMixin {
 					}
 				}
 				
-				onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_put, false);				
+				if(item_qty_put != 0) {
+					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_put, false);	
+				}
 			}else {
 				
 				Item active_slot_item = active_slot.getItem();
@@ -274,7 +276,9 @@ public class HandledScreenMixin {
 					}
 				}
 				
-				onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);				
+				if(item_qty_taken != 0) {
+					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);
+				}
 			}
 			
 		}else if(action_type == SlotActionType.PICKUP && !is_player_inv) {
@@ -300,14 +304,14 @@ public class HandledScreenMixin {
 					
 					String active_slot_item_name = getItemName(active_slot);
 					
-					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);				
+					if(item_qty_taken != 0)	onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);				
 				}else if(active_slot.isEmpty()) {
 					
 					int item_qty_put = player_itemstk_qty;
 
 					String player_item_name = getItemName(player_itemstk);
 					
-					onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);					
+					if(item_qty_put != 0) onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);					
 				}else if(!ItemStack.canCombine(player_itemstk, active_slot)) {
 
 					int item_qty_taken = active_slot_itemstk_qty;
@@ -390,7 +394,7 @@ public class HandledScreenMixin {
 			
 		}else if(action_type == SlotActionType.SWAP && !is_player_inv) {
 			
-			// Offhand swap is not considered atm.
+			// 1-9 buttons
 			if (button >= 0 && button <= 8) {
 				int active_slot_itemstk_qty = active_slot.getCount();
 				ItemStack hotbar_slot = container.slots.get(54 + button).getStack();
@@ -405,6 +409,24 @@ public class HandledScreenMixin {
 				String player_item_name = getItemName(hotbar_slot);
 				
 				onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, player_item_name, item_qty_put);
+			// offhand swap
+			}else if (!StonkCompanionClient.has_offhandswap_off && button == 40) {
+				int active_slot_itemstk_qty = active_slot.getCount();
+				ItemStack offhand_slot = mc.player.getOffHandStack();
+				int offhand_itemstk_qty = offhand_slot.getCount();
+				
+				int item_qty_taken = active_slot_itemstk_qty;
+				int item_qty_put = offhand_itemstk_qty;
+				
+				// button 0 = hotbar slot 1 = slot 54
+				// button 8 = hotbar slot 8 = slot 62
+				
+				String active_slot_item_name = getItemName(active_slot);
+				String offhand_item_name = getItemName(offhand_slot);
+				
+				StonkCompanionClient.LOGGER.info(offhand_item_name + " " + item_qty_put);
+				
+				onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, offhand_item_name, item_qty_put);
 			}
 			
 		}else if(action_type == SlotActionType.THROW && !is_player_inv) {
@@ -445,6 +467,9 @@ public class HandledScreenMixin {
 	// The intent of this is to just be a one stop function for all the click events instead of having like 15 of the same very similar things.
 	private void onClickInjectHelper(String barrel_pos, String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
 		
+		// Nothing happened.
+		if(item_qty_taken == 0 && item_qty_put == 0) return;
+			
 		StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
 		StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);
 			
