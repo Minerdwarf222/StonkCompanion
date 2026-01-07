@@ -31,7 +31,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
     private final Screen parent;
     
     private final int background_rect_width = 165;
-    private final int background_rect_height = 165;
+    private final int background_rect_height = 175;
 	
     public void init() {
     	clear();
@@ -108,6 +108,9 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		//draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+1+y_diff_text, light_blue_color);
 		y_diff_text += 2 + 1;
 		
+		draw_context.drawCenteredTextWithShadow(client.textRenderer, given_barrel.label, (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
+		
+		y_diff_text += font_height + 1;
 		MutableText buy_for = Text.literal("Buy For: ");
 		buy_for = buy_for.withColor(green_color);
 		buy_for.append(Text.literal("%s".formatted(given_barrel.ask_str)).withColor(light_blue_color));
