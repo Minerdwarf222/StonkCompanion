@@ -173,9 +173,9 @@ public class HandledScreenMixin {
 		
 		String player_item_str = (player_itemstk != null) ? player_itemstk.getTranslationKey() : "None";
 		String active_item_str = (active_slot != null) ? active_slot.getTranslationKey() : "None";
-		String player_inv = (slot.inventory.getClass() == PlayerInventory.class) ? "Player" : "Not Player";
 		
 		boolean is_player_inv = slot.inventory.getClass() == PlayerInventory.class;
+		String player_inv = is_player_inv ? "Player" : "Not Player";
 		
 		ScreenHandler container = screen.getScreenHandler();
 		List<Slot> list_of_items = container.slots.stream().filter(_slot -> _slot.inventory.getClass() != PlayerInventory.class).toList();
@@ -437,14 +437,49 @@ public class HandledScreenMixin {
 			String active_slot_item_name = getItemName(active_slot);
 			
 			onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);			
-		}else if(action_type == SlotActionType.QUICK_CRAFT && !is_player_inv) {
+		}else if(action_type == SlotActionType.QUICK_CRAFT) {
+			
+			/* Handling quick_craft :doom:
+			 * How to handle it thoughts:
+			 * Once the quick_craft is committed an action is sent for each slot quick_crafted into.
+			 * These slots will always be empty or have the same item in them otherwise it won't send.
+			 * The game will attempt to distribute the item across the slots with math.floor(item_qty/slot count) in each slot.
+			 * 	If a slot already has some of that item, then it just adds that amount up until the slot is full, the rest stay in cursor I think.
+			 * So I need to have some timer going on that starts when the first quick_craft action is detected, then stops 0.5s after the last quick_craft is detected.
+			 * Where it will then calculate what happened.
+			 */
 			
 			int player_itemstk_qty = player_itemstk.getCount();
-			int item_qty_put = player_itemstk_qty;
 
 			String player_item_name = getItemName(player_itemstk);
 			
-			onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);	
+			int active_slot_itemstk_qty = 0;
+			if(slot.hasStack()){
+				active_slot_itemstk_qty = active_slot.getCount();
+			}
+			
+			if(StonkCompanionClient.is_quick_crafting) {
+				StonkCompanionClient.time_since_start_of_quick_craft = 0;
+				if(!is_player_inv) {
+					StonkCompanionClient.quick_craft_slot_qty.put(slot_id, active_slot_itemstk_qty);
+				}else {
+					StonkCompanionClient.quick_craft_in_player_inv++;
+				}
+			} else {
+				StonkCompanionClient.is_quick_crafting = true;
+				StonkCompanionClient.quick_craft_barrel_pos = barrel_pos;
+				StonkCompanionClient.quick_craft_item_max_stack = player_itemstk.getMaxCount();
+				StonkCompanionClient.quick_craft_item_name = player_item_name;
+				StonkCompanionClient.quick_craft_item_qty = player_itemstk_qty;
+				StonkCompanionClient.time_since_start_of_quick_craft = 0;
+				if(!is_player_inv) {
+					StonkCompanionClient.quick_craft_slot_qty.put(slot_id, active_slot_itemstk_qty);
+				}else {
+					StonkCompanionClient.quick_craft_in_player_inv++;
+				}
+			}
+			
+			// onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);	
 		}
 		
 	}

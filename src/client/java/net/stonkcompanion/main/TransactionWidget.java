@@ -128,9 +128,9 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		
 		if(!StonkCompanionClient.fairprice_currency_str.equals("N/A")) {
 			y_diff_text += font_height + 1;
-			if(StonkCompanionClient.fairprice_val <= given_barrel.compressed_bid_price*1.01) {
+			if(StonkCompanionClient.fairprice_val <= given_barrel.compressed_bid_price*1.0001) {
 				draw_context.drawTextWithShadow(client.textRenderer, "Look in lower barrel.", dimension.x+5, dimension.y+y_diff_text, light_blue_color);
-			}else if(StonkCompanionClient.fairprice_val >= given_barrel.compressed_ask_price*0.99) {
+			}else if(StonkCompanionClient.fairprice_val >= given_barrel.compressed_ask_price*0.9999) {
 				draw_context.drawTextWithShadow(client.textRenderer, "Look in higher barrel.", dimension.x+5, dimension.y+y_diff_text, light_blue_color);
 			}else {
 				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s %s".formatted(StonkCompanionClient.df1.format(StonkCompanionClient.fairprice_val), StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);

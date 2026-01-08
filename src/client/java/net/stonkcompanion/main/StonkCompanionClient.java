@@ -68,6 +68,17 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static final Map<Integer, String> currency_type_to_hyper_text = Map.of(1, "hxp", 2, "hcs", 3, "har");
 	
 	// Anti-monu flag
+	
+	// Quick Craft Handling
+	public static boolean is_quick_crafting = false;
+	public static int time_since_start_of_quick_craft = 0;
+	public static int max_time_for_quick_craft  = 3;
+	public static HashMap<Integer, Integer> quick_craft_slot_qty = new HashMap<>();
+	public static String quick_craft_item_name = "";
+	public static int quick_craft_item_qty = 0;
+	public static int quick_craft_item_max_stack = 0;
+	public static String quick_craft_barrel_pos = "";
+	public static int quick_craft_in_player_inv = 0;
 
 	// Checkpoint vars. Probs move elsewhere later.
 	public static boolean checkpointing = false;
@@ -661,6 +672,115 @@ public class StonkCompanionClient implements ClientModInitializer{
 		});
 		
 		ClientTickEvents.START_CLIENT_TICK.register((client) -> {
+			
+			if(is_quick_crafting) {
+				
+				if(time_since_start_of_quick_craft >= max_time_for_quick_craft ) {
+					// Do logic
+					
+					if(!quick_craft_slot_qty.isEmpty()) {
+						int total_quick_craft_slots = quick_craft_in_player_inv + quick_craft_slot_qty.size();
+						int quick_craft_split_amount = (int)(quick_craft_item_qty/total_quick_craft_slots);
+						
+						int total_put_in_via_quick_craft = 0;
+						
+						for(int slot_qty : quick_craft_slot_qty.values()) {
+							
+							if(slot_qty+quick_craft_split_amount > quick_craft_item_max_stack) {
+								total_put_in_via_quick_craft += quick_craft_item_max_stack - slot_qty;
+							}else {
+								total_put_in_via_quick_craft += quick_craft_split_amount;
+							}
+							
+						}
+						
+						if(total_put_in_via_quick_craft != 0) {
+							barrel_transactions.putIfAbsent(quick_craft_barrel_pos, new HashMap<String, Integer>());
+							barrel_timeout.put(quick_craft_barrel_pos, 0);
+							barrel_transactions.get(quick_craft_barrel_pos).put(quick_craft_item_name, barrel_transactions.get(quick_craft_barrel_pos).getOrDefault(quick_craft_item_name, 0) + total_put_in_via_quick_craft);
+						
+							if (barrel_prices.get(quick_craft_barrel_pos) == null) return;
+							
+							int currency_type = barrel_prices.get(quick_craft_barrel_pos).currency_type;
+							String label = barrel_prices.get(quick_craft_barrel_pos).label;
+							
+							barrel_actions.putIfAbsent(quick_craft_barrel_pos, new double[]{0.0, 0.0});
+							
+							double[] barrel_actions_change = StonkCompanionClient.barrel_actions.get(quick_craft_barrel_pos);
+							
+							String taken_item_name_lc = quick_craft_item_name.toLowerCase();
+								
+							if(currency_type==1 && taken_item_name_lc.equals("hyperexperience")) {
+								barrel_actions_change[1] += 64*total_put_in_via_quick_craft;
+							}else if(currency_type==1 && taken_item_name_lc.equals("concentrated experience")) {
+								barrel_actions_change[1] += total_put_in_via_quick_craft;
+							}else if(currency_type==1 && taken_item_name_lc.equals("experience bottle")) {
+								barrel_actions_change[1] += (double)(total_put_in_via_quick_craft)/8.0;
+							}else if(currency_type==2 && taken_item_name_lc.equals("hyper crystalline shard")) {
+								barrel_actions_change[1] += 64*total_put_in_via_quick_craft;
+							}else if(currency_type==2 && taken_item_name_lc.equals("compressed crystalline shard")) {
+								barrel_actions_change[1] += total_put_in_via_quick_craft;
+							}else if(currency_type==2 && taken_item_name_lc.equals("crystalline shard")) {
+								barrel_actions_change[1] += (double)(total_put_in_via_quick_craft)/8.0;
+							}else if(currency_type==3 && taken_item_name_lc.equals("hyperchromatic archos ring")) {
+								barrel_actions_change[1] += 64*total_put_in_via_quick_craft;
+							}else if(currency_type==3 && taken_item_name_lc.equals("archos ring")) {
+								barrel_actions_change[1] += total_put_in_via_quick_craft;
+							}else {
+									
+								if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
+									barrel_actions_change[0] += (double)(total_put_in_via_quick_craft)/64.0;
+								}else {
+									barrel_actions_change[0] += total_put_in_via_quick_craft;
+								}
+							}
+							
+							if (StonkCompanionClient.barrel_prices.get(quick_craft_barrel_pos) == null) return;
+							if (StonkCompanionClient.barrel_actions.get(quick_craft_barrel_pos) == null) return;
+							
+							Barrel traded_barrel = StonkCompanionClient.barrel_prices.get(quick_craft_barrel_pos);
+							double other_items = StonkCompanionClient.barrel_actions.get(quick_craft_barrel_pos)[0];
+							double actual_compressed = StonkCompanionClient.barrel_actions.get(quick_craft_barrel_pos)[1];
+							
+							double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
+							
+						    double currency_delta = expected_compressed - actual_compressed;
+						    
+						    String currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(traded_barrel.currency_type);
+						    String hyper_str = StonkCompanionClient.currency_type_to_hyper_text.get(traded_barrel.currency_type);
+						    
+						    // Bounds check.
+						    if(currency_delta < 0.0005 && currency_delta > -0.0005) currency_delta = 0;
+
+						    if(currency_delta == 0) {
+						    	StonkCompanionClient.barrel_transaction_validity.put(quick_craft_barrel_pos, true);
+						    	StonkCompanionClient.barrel_transaction_solution.remove(quick_craft_barrel_pos);
+						    }else if(currency_delta != 0) {
+						    	StonkCompanionClient.barrel_transaction_validity.put(quick_craft_barrel_pos, false);	
+						    	double abs_currency_delta = Math.abs(currency_delta);
+						    	// TODO: Turn this into an array of two strings.
+						    	if(StonkCompanionClient.is_compressed_only) {
+							    	StonkCompanionClient.barrel_transaction_solution.put(quick_craft_barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
+						    	}else {
+							    	StonkCompanionClient.barrel_transaction_solution.put(quick_craft_barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
+						    	}
+						    }
+						}
+						
+					}
+					
+					is_quick_crafting = false;
+					time_since_start_of_quick_craft = 0;
+					quick_craft_slot_qty.clear();
+					quick_craft_item_name = "";
+					quick_craft_item_qty = 0;
+					quick_craft_item_max_stack = 0;
+					quick_craft_barrel_pos = "";
+					quick_craft_in_player_inv = 0;
+				}else {
+					time_since_start_of_quick_craft++;
+				}
+			}
 			
 			// Every tick increase the lifetime of every barrel and then check if it has exceeded it's lifetime.
 			for (String pos : barrel_timeout.keySet()) {
