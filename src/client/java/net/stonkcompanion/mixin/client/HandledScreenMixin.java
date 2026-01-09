@@ -18,6 +18,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.screen.ScreenHandler;
@@ -359,7 +360,15 @@ public class HandledScreenMixin {
 					
 					String active_slot_item_name = getItemName(active_slot);
 					
-					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);					
+					if(active_slot_item_name.startsWith("Tesseract of Knowledge (u)")) {
+						if(mc.player.experienceLevel >= 25) {
+							active_slot_item_name = "Repair Anvil";
+							item_qty_taken = 1;
+							onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, false);	
+						}
+					}else {	
+						onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, true);	
+					}
 				}else if(active_slot.isEmpty()) {
 					
 					int item_qty_put = 1;
@@ -375,7 +384,17 @@ public class HandledScreenMixin {
 					String active_slot_item_name = getItemName(active_slot);	
 					String player_item_name = getItemName(player_itemstk);
 					
-					onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, player_item_name, item_qty_put);					
+					if(player_item_name.equals("Repair Anvil") && active_slot_item_name.startsWith("Tesseract of Knowledge (u)")) {
+						onClickInjectHelper(barrel_pos, player_item_name, item_qty_put, false);	
+					}else if(player_item_name.startsWith("Tesseract of Knowledge (u)") && !active_slot_item_name.equals("Repair Anvil")) {
+						
+						// How do I handle repairing an item?
+						/*if(active_slot.isDamaged()) {
+							onClickInjectHelper(barrel_pos, "Repair Anvil", 1, false);	
+						}	*/					
+					}else {
+						onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, player_item_name, item_qty_put);	
+					}
 				}else {
 				
 					if(active_slot_item.getMaxCount() == active_slot_itemstk_qty) {
@@ -458,24 +477,30 @@ public class HandledScreenMixin {
 				active_slot_itemstk_qty = active_slot.getCount();
 			}
 			
-			if(StonkCompanionClient.is_quick_crafting) {
-				StonkCompanionClient.time_since_start_of_quick_craft = 0;
+			if(!player_itemstk.isStackable() || (player_itemstk.getItem() == Items.LIME_STAINED_GLASS && player_item_name.startsWith("Tesseract of Knowledge (u)"))) {
 				if(!is_player_inv) {
-					StonkCompanionClient.quick_craft_slot_qty.put(slot_id, active_slot_itemstk_qty);
-				}else {
-					StonkCompanionClient.quick_craft_in_player_inv++;
+					onClickInjectHelper(barrel_pos, player_item_name, player_itemstk_qty, false);			
 				}
-			} else {
-				StonkCompanionClient.is_quick_crafting = true;
-				StonkCompanionClient.quick_craft_barrel_pos = barrel_pos;
-				StonkCompanionClient.quick_craft_item_max_stack = player_itemstk.getMaxCount();
-				StonkCompanionClient.quick_craft_item_name = player_item_name;
-				StonkCompanionClient.quick_craft_item_qty = player_itemstk_qty;
-				StonkCompanionClient.time_since_start_of_quick_craft = 0;
-				if(!is_player_inv) {
-					StonkCompanionClient.quick_craft_slot_qty.put(slot_id, active_slot_itemstk_qty);
-				}else {
-					StonkCompanionClient.quick_craft_in_player_inv++;
+			}else {
+				if(StonkCompanionClient.is_quick_crafting) {
+					StonkCompanionClient.time_since_start_of_quick_craft = 0;
+					if(!is_player_inv) {
+						StonkCompanionClient.quick_craft_slot_qty.put(slot_id, active_slot_itemstk_qty);
+					}else {
+						StonkCompanionClient.quick_craft_in_player_inv++;
+					}
+				} else {
+					StonkCompanionClient.is_quick_crafting = true;
+					StonkCompanionClient.quick_craft_barrel_pos = barrel_pos;
+					StonkCompanionClient.quick_craft_item_max_stack = player_itemstk.getMaxCount();
+					StonkCompanionClient.quick_craft_item_name = player_item_name;
+					StonkCompanionClient.quick_craft_item_qty = player_itemstk_qty;
+					StonkCompanionClient.time_since_start_of_quick_craft = 0;
+					if(!is_player_inv) {
+						StonkCompanionClient.quick_craft_slot_qty.put(slot_id, active_slot_itemstk_qty);
+					}else {
+						StonkCompanionClient.quick_craft_in_player_inv++;
+					}
 				}
 			}
 			
@@ -490,7 +515,14 @@ public class HandledScreenMixin {
 		if(given_item.getNbt() == null || !given_item.getNbt().contains("Monumenta")) {
 			return given_item.getItem().getTranslationKey().substring(given_item.getItem().getTranslationKey().lastIndexOf('.')+1);
 		}else {
-			return given_item.getNbt().getCompound("plain").getCompound("display").getString("Name");				
+			
+			String item_name = given_item.getNbt().getCompound("plain").getCompound("display").getString("Name");
+			
+			if(given_item.getItem() == Items.LIME_STAINED_GLASS && item_name.equals("Tesseract of Knowledge (u)")) {
+				item_name += "|" + given_item.getNbt().getCompound("Monumenta").getCompound("PlayerModified").getInt("Charges");
+			}
+			
+			return item_name;				
 		}
 	}
 	
@@ -507,6 +539,15 @@ public class HandledScreenMixin {
 			
 		StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
 		StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);
+		
+		if(taken_item_name.startsWith("Tesseract of Knowledge (u)")) {
+			item_qty_taken = Integer.parseInt(taken_item_name.substring(27));
+			taken_item_name = "Repair Anvil";
+		}
+		if(put_item_name.startsWith("Tesseract of Knowledge (u)")) {
+			item_qty_put= Integer.parseInt(put_item_name.substring(27));
+			put_item_name = "Repair Anvil";
+		}
 			
 		onClickActionAdd(barrel_pos, taken_item_name, item_qty_taken, put_item_name, item_qty_put);
 		onClickActionMistradeCheck(barrel_pos);
