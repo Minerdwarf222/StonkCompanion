@@ -478,6 +478,7 @@ public class HandledScreenMixin {
 			}
 			
 			if(!player_itemstk.isStackable() || (player_itemstk.getItem() == Items.LIME_STAINED_GLASS && player_item_name.startsWith("Tesseract of Knowledge (u)"))) {
+				// StonkCompanionClient.LOGGER.info("Not stackable.");
 				if(!is_player_inv) {
 					onClickInjectHelper(barrel_pos, player_item_name, player_itemstk_qty, false);			
 				}
@@ -489,7 +490,7 @@ public class HandledScreenMixin {
 					}else {
 						StonkCompanionClient.quick_craft_in_player_inv++;
 					}
-				} else {
+				}else {
 					StonkCompanionClient.is_quick_crafting = true;
 					StonkCompanionClient.quick_craft_barrel_pos = barrel_pos;
 					StonkCompanionClient.quick_craft_item_max_stack = player_itemstk.getMaxCount();

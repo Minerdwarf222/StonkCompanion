@@ -843,8 +843,17 @@ public class StonkCompanionClient implements ClientModInitializer{
 				// Since it is either not something we care about or it is not in the expected format.
 				if (!temp_name_item.startsWith("literal{")) return message;
 				
+				String backup_name_item = temp_name_item;
 				temp_name_item = temp_name_item.replace("literal{", "");
 				temp_name_item = temp_name_item.substring(0, temp_name_item.indexOf("}"));
+				
+				if (temp_name_item.equals("Tesseract of Knowledge (u)")) {
+					int indx_of_anvil_count = backup_name_item.indexOf("literal{Stored anvils: }");
+					   
+					if (indx_of_anvil_count != -1) {
+						temp_name_item += " (Contains: " + backup_name_item.substring(indx_of_anvil_count+55, backup_name_item.indexOf('}', indx_of_anvil_count+55))+ " Anvils)";
+					}
+				}				
 				   
 				name_item = temp_name_item;
 				
