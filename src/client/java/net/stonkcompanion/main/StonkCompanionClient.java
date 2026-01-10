@@ -60,7 +60,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private boolean change_coreprotect = true;
 	
 	// Bool
-	public static boolean is_verbose_logging = false;
+	public static boolean is_verbose_logging = true;
 	public static boolean is_showing_text = true;
 	public static boolean is_showing_gui = true;
 	
