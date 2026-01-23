@@ -31,7 +31,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
     private final Screen parent;
     
     private final int background_rect_width = 165;
-    private final int background_rect_height = 175;
+    private final int background_rect_height = 180;
 	
     public void init() {
     	clear();
@@ -133,7 +133,14 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 			}else if(StonkCompanionClient.fairprice_val >= given_barrel.compressed_ask_price*0.9999) {
 				draw_context.drawTextWithShadow(client.textRenderer, "Look in higher barrel.", dimension.x+5, dimension.y+y_diff_text, light_blue_color);
 			}else {
-				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s %s".formatted(StonkCompanionClient.df1.format(StonkCompanionClient.fairprice_val), StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+				if(StonkCompanionClient.fairprice_val > 0) {
+					draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s %s".formatted(StonkCompanionClient.df1.format(StonkCompanionClient.fairprice_val), StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+				}else if(StonkCompanionClient.fairprice_val == -1) {
+					String[] forex_fairstonk = StonkCompanionClient.fairprice_currency_str.split("|");
+					draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s".formatted(forex_fairstonk[0]), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+					y_diff_text += font_height + 1;
+					draw_context.drawTextWithShadow(client.textRenderer, "                  %s".formatted(forex_fairstonk[1]), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
+				}
 			}
 			/* Non-compressed is too long.
 			if(StonkCompanionClient.is_compressed_only) {

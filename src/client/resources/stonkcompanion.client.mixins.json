@@ -8,7 +8,8 @@
 		"PlayerListHudAccessor",
 		"HandledScreenAccessor",
 		"ScreenMixin",
-		"ScreenAccessor"
+		"ScreenAccessor",
+		"ClientPlayerInteractionManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

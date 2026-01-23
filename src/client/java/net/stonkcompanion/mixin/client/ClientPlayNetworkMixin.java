@@ -3,6 +3,7 @@ package net.stonkcompanion.mixin.client;
 import java.time.Instant;
 import java.util.List;
 
+import org.joml.Math;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,6 +15,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -21,6 +23,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.network.packet.s2c.play.InventoryS2CPacket;
+import net.minecraft.network.packet.s2c.play.ScreenHandlerSlotUpdateS2CPacket;
+import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.stonkcompanion.main.Barrel;
 import net.stonkcompanion.main.StonkCompanionClient;
@@ -28,10 +32,186 @@ import net.stonkcompanion.main.StonkCompanionClient;
 @Environment(EnvType.CLIENT)
 @Mixin(ClientPlayNetworkHandler.class)
 public class ClientPlayNetworkMixin {
+	
+	@Inject(at = @At(value = "TAIL"), method = "onScreenHandlerSlotUpdate(Lnet/minecraft/network/packet/s2c/play/ScreenHandlerSlotUpdateS2CPacket;)V", cancellable = true)
+	private void onScreenHandlerSlotUpdatePacket(ScreenHandlerSlotUpdateS2CPacket packet, CallbackInfo ci) {
+				
+		//StonkCompanionClient.LOGGER.error("ScreenHandlerSlotUpdatePacket");
+		
+		MinecraftClient mc = MinecraftClient.getInstance();
+		
+        Screen screen = mc.currentScreen;
+        ClientPlayerEntity playerEntity = mc.player;
+        
+        // if(playerEntity == null) return;
+        // if(screen != null) StonkCompanionClient.LOGGER.error(screen.getClass().getCanonicalName());
+        if (true) {
+            ItemStack itemStack = packet.getStack();
+            int i = packet.getSlot();
+            //StonkCompanionClient.LOGGER.error("Doing something?: " + itemStack.getName().getString() + " Slot: " + i);
+            if (packet.getSyncId() == ScreenHandlerSlotUpdateS2CPacket.UPDATE_CURSOR_SYNC_ID) {
+            	//StonkCompanionClient.LOGGER.error("Setting cursor stack: " + itemStack.getName().getString());
+            } else if (packet.getSyncId() == ScreenHandlerSlotUpdateS2CPacket.UPDATE_PLAYER_INVENTORY_SYNC_ID) {
+            	//StonkCompanionClient.LOGGER.error("Setting playerInventory stack: " + itemStack.getName().getString() + " Slot: " + i);
+            } else {
+                if (packet.getSyncId() == 0 && PlayerScreenHandler.isInHotbar((int)i)) {
+                    
+                	//StonkCompanionClient.LOGGER.error("Changing hotbar stack?: " + itemStack.getName().getString() + " Slot: " + i + " packet revision?: " + packet.getRevision());
+
+                } else if (!(packet.getSyncId() != playerEntity.currentScreenHandler.syncId || packet.getSyncId() == 0)) {
+                	
+                	//StonkCompanionClient.LOGGER.error("Changing screen slot?: " + itemStack.getName().getString() + " Slot: " + i + " packet revision?: " + packet.getRevision());
+            
+                }
+            }
+        }
+	}
+	
+	
+	private void checkIfDesync(List<Slot> list_of_slots) {
+		
+		for(int i = 0; i < list_of_slots.size(); i++) {
+			
+			if(!StonkCompanionClient.barrel_changes.containsKey(i)) continue;
+			if(StonkCompanionClient.barrel_changes.get(i) == null && !list_of_slots.get(i).hasStack()) continue;
+			
+			if (StonkCompanionClient.barrel_changes.get(i) == null || !ItemStack.areEqual(list_of_slots.get(i).getStack(), StonkCompanionClient.barrel_changes.get(i))) {
+				// Revert previous action.
+				
+				//onClickActionAdd(StonkCompanionClient.barrel_pos_found, StonkCompanionClient.previous_action_name_put, StonkCompanionClient.previous_action_qty_put, StonkCompanionClient.previous_action_name_take, StonkCompanionClient.previous_action_qty_take);
+				//onClickActionMistradeCheck(StonkCompanionClient.barrel_pos_found);
+				
+				//if(StonkCompanionClient.previous_action_qty_put != 0) StonkCompanionClient.barrel_transactions.get(StonkCompanionClient.barrel_pos_found).put(StonkCompanionClient.previous_action_name_put, StonkCompanionClient.barrel_transactions.get(StonkCompanionClient.barrel_pos_found).getOrDefault(StonkCompanionClient.previous_action_name_put, 0) - StonkCompanionClient.previous_action_qty_put);
+				//if(StonkCompanionClient.previous_action_qty_take != 0) StonkCompanionClient.barrel_transactions.get(StonkCompanionClient.barrel_pos_found).put(StonkCompanionClient.previous_action_name_take, StonkCompanionClient.barrel_transactions.get(StonkCompanionClient.barrel_pos_found).getOrDefault(StonkCompanionClient.previous_action_name_take, 0) + StonkCompanionClient.previous_action_qty_take);
+				
+				StonkCompanionClient.LOGGER.info("DESYNC DETECTED IN " + StonkCompanionClient.barrel_pos_found + ".");
+				if(StonkCompanionClient.previous_action_qty_put != 0) StonkCompanionClient.LOGGER.info("Prev put: x" + StonkCompanionClient.previous_action_qty_put + " " + StonkCompanionClient.previous_action_name_put);
+				if(StonkCompanionClient.previous_action_qty_take != 0) StonkCompanionClient.LOGGER.info("Prev take: x" + StonkCompanionClient.previous_action_qty_take + " " + StonkCompanionClient.previous_action_name_take);
+				StonkCompanionClient.previous_action_qty_put = 0;
+				StonkCompanionClient.previous_action_name_put = "";
+				StonkCompanionClient.previous_action_qty_take = 0;
+				StonkCompanionClient.previous_action_name_take = "";
+				StonkCompanionClient.action_been_done = false;
+				StonkCompanionClient.barrel_changes.clear();				
+				return;
+			}
+		}
+		
+	}
+	
+	private void onClickActionMistradeCheck(String barrel_pos) {
+		
+		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
+		if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) return;
+		
+		Barrel traded_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+		double other_items = StonkCompanionClient.barrel_actions.get(barrel_pos)[0];
+		double actual_compressed = StonkCompanionClient.barrel_actions.get(barrel_pos)[1];
+		
+		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
+		
+	    double currency_delta = expected_compressed - actual_compressed;
+	    
+	    String currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(traded_barrel.currency_type);
+	    String hyper_str = StonkCompanionClient.currency_type_to_hyper_text.get(traded_barrel.currency_type);
+	    
+	    // Bounds check.
+	    if(currency_delta < 0.0005 && currency_delta > -0.0005) currency_delta = 0;
+
+	    if(currency_delta == 0) {
+	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, true);
+	    	StonkCompanionClient.barrel_transaction_solution.remove(barrel_pos);
+	    }else if(currency_delta != 0) {
+	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, false);	
+	    	double abs_currency_delta = Math.abs(currency_delta);
+	    	// TODO: Turn this into an array of two strings.
+	    	if(StonkCompanionClient.is_compressed_only) {
+		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
+	    	}else {
+		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
+	    	}
+	    }
+	}
+	
+	private void onClickActionAdd(String barrel_pos, String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
+		
+		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
+		
+		int currency_type = StonkCompanionClient.barrel_prices.get(barrel_pos).currency_type;
+		String label = StonkCompanionClient.barrel_prices.get(barrel_pos).label;
+		
+		if(StonkCompanionClient.barrel_actions.get(barrel_pos) == null) {
+			StonkCompanionClient.barrel_actions.put(barrel_pos, new double[]{0.0, 0.0});
+		}
+		
+		double[] barrel_actions = StonkCompanionClient.barrel_actions.get(barrel_pos);
+		
+		if(item_qty_taken != 0) {
+			String taken_item_name_lc = taken_item_name.toLowerCase();
+			
+			if(currency_type==1 && taken_item_name_lc.equals("hyperexperience")) {
+				barrel_actions[1] -= 64*item_qty_taken;
+			}else if(currency_type==1 && taken_item_name_lc.equals("concentrated experience")) {
+				barrel_actions[1] -= item_qty_taken;
+			}else if(currency_type==1 && taken_item_name_lc.equals("experience bottle")) {
+				barrel_actions[1] -= (double)(item_qty_taken)/8.0;
+			}else if(currency_type==2 && taken_item_name_lc.equals("hyper crystalline shard")) {
+				barrel_actions[1] -= 64*item_qty_taken;
+			}else if(currency_type==2 && taken_item_name_lc.equals("compressed crystalline shard")) {
+				barrel_actions[1] -= item_qty_taken;
+			}else if(currency_type==2 && taken_item_name_lc.equals("crystalline shard")) {
+				barrel_actions[1] -= (double)(item_qty_taken)/8.0;
+			}else if(currency_type==3 && taken_item_name_lc.equals("hyperchromatic archos ring")) {
+				barrel_actions[1] -= 64*item_qty_taken;
+			}else if(currency_type==3 && taken_item_name_lc.equals("archos ring")) {
+				barrel_actions[1] -= item_qty_taken;
+			}else {
+				
+				if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
+					barrel_actions[0] -= (double)(item_qty_taken)/64.0;
+				}else {
+					barrel_actions[0] -= item_qty_taken;
+				}
+			}
+		}
+		
+		if(item_qty_put != 0) {
+			String taken_item_name_lc = put_item_name.toLowerCase();
+					
+			if(currency_type==1 && taken_item_name_lc.equals("hyperexperience")) {
+				barrel_actions[1] += 64*item_qty_put;
+			}else if(currency_type==1 && taken_item_name_lc.equals("concentrated experience")) {
+				barrel_actions[1] += item_qty_put;
+			}else if(currency_type==1 && taken_item_name_lc.equals("experience bottle")) {
+				barrel_actions[1] += (double)(item_qty_put)/8.0;
+			}else if(currency_type==2 && taken_item_name_lc.equals("hyper crystalline shard")) {
+				barrel_actions[1] += 64*item_qty_put;
+			}else if(currency_type==2 && taken_item_name_lc.equals("compressed crystalline shard")) {
+				barrel_actions[1] += item_qty_put;
+			}else if(currency_type==2 && taken_item_name_lc.equals("crystalline shard")) {
+				barrel_actions[1] += (double)(item_qty_put)/8.0;
+			}else if(currency_type==3 && taken_item_name_lc.equals("hyperchromatic archos ring")) {
+				barrel_actions[1] += 64*item_qty_put;
+			}else if(currency_type==3 && taken_item_name_lc.equals("archos ring")) {
+				barrel_actions[1] += item_qty_put;
+			}else {
+				
+				if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
+					barrel_actions[0] += (double)(item_qty_put)/64.0;
+				}else {
+					barrel_actions[0] += item_qty_put;
+				}
+			}
+		}
+		
+	}
+	
 
 	@Inject(at = @At(value = "TAIL"), method = "onInventory(Lnet/minecraft/network/packet/s2c/play/InventoryS2CPacket;)V", cancellable = true)
 	private void onInventoryPKT(InventoryS2CPacket packet, CallbackInfo ci) {
 
+		//StonkCompanionClient.LOGGER.error("InventoryS2CPacket recieved");
+		
 		StonkCompanionClient.is_there_barrel_price = false;
 		if(!StonkCompanionClient.checkpointing && !StonkCompanionClient.is_mistrade_checking) return;
 		if(!StonkCompanionClient.getShard().equals("plots")) return;
@@ -75,9 +255,37 @@ public class ClientPlayNetworkMixin {
 				double interpolated_price = Double.parseDouble(fair_price_results[0]);
 				int currency_type = (int)Double.parseDouble(fair_price_results[1]);
 				
-				StonkCompanionClient.fairprice_currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(currency_type);
-	
-			    StonkCompanionClient.fairprice_val = interpolated_price;
+				if(currency_type > 0) {		
+					StonkCompanionClient.fairprice_currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(currency_type);
+		
+				    StonkCompanionClient.fairprice_val = interpolated_price;
+				}else if(currency_type < 0) {
+					
+					String currency_one = "";
+					String currency_two = "";
+					
+				    if (currency_type == -1) {
+				    	currency_one = "hxp";
+				       	currency_two = "hcs";
+				    }else if(currency_type == -2) {
+				    	currency_one = "hxp";
+				      	currency_two = "har";
+				    }else if(currency_type == -3) {
+				    	currency_one = "hcs";
+				       	currency_two = "har";
+				    }
+
+				    StonkCompanionClient.fairprice_currency_str = String.format("1 %s -> %s %s|1 %s -> %s %s",
+				    	currency_one,
+				    	StonkCompanionClient.df1.format(interpolated_price), 
+				    	currency_two,
+				    	currency_two,
+				    	StonkCompanionClient.df1.format(1.0/interpolated_price), 
+				    	currency_one);
+				    
+				    StonkCompanionClient.fairprice_val = -1;
+				    
+				}
 			}
 		}
 		
@@ -172,6 +380,9 @@ public class ClientPlayNetworkMixin {
 				
 				StonkCompanionClient.barrel_pos_found = barrel_pos;
 				StonkCompanionClient.is_there_barrel_price = true;
+				
+				if(StonkCompanionClient.action_been_done) checkIfDesync(list_of_slots);
+				
 			}
 			
 		}
