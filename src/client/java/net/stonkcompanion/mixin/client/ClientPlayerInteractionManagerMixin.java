@@ -572,6 +572,7 @@ public class ClientPlayerInteractionManagerMixin {
 					}
 				}else {
 					StonkCompanionClient.is_quick_crafting = true;
+					StonkCompanionClient.quick_craft_button = button;
 					StonkCompanionClient.quick_craft_barrel_pos = barrel_pos;
 					StonkCompanionClient.quick_craft_item_max_stack = player_itemstk.getMaxCount();
 					StonkCompanionClient.quick_craft_item_name = player_item_name;

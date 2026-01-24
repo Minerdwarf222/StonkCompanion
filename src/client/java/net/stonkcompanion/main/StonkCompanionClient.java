@@ -71,6 +71,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	// Quick Craft Handling
 	public static boolean is_quick_crafting = false;
+	public static int quick_craft_button = -1;
 	public static int time_since_start_of_quick_craft = 0;
 	public static int max_time_for_quick_craft  = 3;
 	public static HashMap<Integer, Integer> quick_craft_slot_qty = new HashMap<>();
@@ -799,7 +800,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		if(barrel_prices.get(quick_craft_barrel_pos) == null) return;
 
 		int total_quick_craft_slots = quick_craft_in_player_inv + quick_craft_slot_qty.size();
-		int quick_craft_split_amount = (int)(quick_craft_item_qty/total_quick_craft_slots);
+		int quick_craft_split_amount = (quick_craft_button == 5 ) ? 1 : (int)(quick_craft_item_qty/total_quick_craft_slots);
 			
 		int total_put_in_via_quick_craft = 0;
 			
@@ -926,6 +927,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 					quick_craft_barrel_pos = "";
 					quick_craft_in_player_inv = 0;
 					quick_craft_itemstk = null;
+					quick_craft_button = -1;
 					
 				}else {
 					time_since_start_of_quick_craft++;
