@@ -358,9 +358,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}
 		}
 		
-		LOGGER.info(currency_type+"");
-		LOGGER.info(ask_price_compressed+"");
-		LOGGER.info(bid_price_compressed+"");
+		// LOGGER.info(currency_type+"");
+		// LOGGER.info(ask_price_compressed+"");
+		// LOGGER.info(bid_price_compressed+"");
 		
 		if (currency_type == 0 || ask_price_compressed == -1 || bid_price_compressed == -1) {
 			return null;
@@ -438,21 +438,21 @@ public class StonkCompanionClient implements ClientModInitializer{
 			double one_to_two = ask_price_compressed;
 			double two_to_one = bid_price_compressed;
 			
-			LOGGER.info(one_to_two+" "+two_to_one);
+			// LOGGER.info(one_to_two+" "+two_to_one);
 
 			double spread = (1/(two_to_one/64)) - (1/(64/one_to_two));
 			double mid = (1/(64/one_to_two)) + spread/2;
 			
-			LOGGER.info(mid+" "+spread);
+			// LOGGER.info(mid+" "+spread);
 
 			double net_currency_in_barrel = barrel_compressed_currency + barrel_mats/mid;
 			
-			LOGGER.info(barrel_compressed_currency+" "+barrel_mats);
+			// LOGGER.info(barrel_compressed_currency+" "+barrel_mats);
 
 			double demand_modifier = barrel_compressed_currency / net_currency_in_barrel;
 			double intraspread_factor = demand_modifier * spread;
 			double interpolated_price = (1/(two_to_one/64)) - intraspread_factor;
-			LOGGER.info(demand_modifier+" "+intraspread_factor+" " + interpolated_price);
+			// LOGGER.info(demand_modifier+" "+intraspread_factor+" " + interpolated_price);
 
 			// Fair forex price is a bijection of currency_one <-> currency_two, so multiplying/dividing by it will give
 			// the other side's value.
