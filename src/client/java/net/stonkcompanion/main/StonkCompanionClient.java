@@ -313,8 +313,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 								int left_side_currency = StonkCompanionClient.getCurrencyType(left_side.trim());
 								int right_side_currency = StonkCompanionClient.getCurrencyType(right_side);
 								
-								LOGGER.info(_sign_line);
-								LOGGER.info(left_side_currency + " " + right_side_currency);
+								// LOGGER.info(_sign_line);
+								// LOGGER.info(left_side_currency + " " + right_side_currency);
 
 								if (left_side_currency < right_side_currency) {
 									// This is the one_to_two value
