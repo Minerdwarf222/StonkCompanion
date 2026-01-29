@@ -3,7 +3,6 @@ package net.stonkcompanion.mixin.client;
 import java.time.Instant;
 import java.util.List;
 
-import org.joml.Math;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,8 +25,10 @@ import net.minecraft.network.packet.s2c.play.InventoryS2CPacket;
 import net.minecraft.network.packet.s2c.play.ScreenHandlerSlotUpdateS2CPacket;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.slot.Slot;
-import net.stonkcompanion.main.Barrel;
 import net.stonkcompanion.main.StonkCompanionClient;
+import net.stonkcompanion.main.Barrel;
+import net.stonkcompanion.main.Barrel.BarrelTypes;
+import net.stonkcompanion.main.StonkBarrel;
 
 @Environment(EnvType.CLIENT)
 @Mixin(ClientPlayNetworkHandler.class)
@@ -70,6 +71,8 @@ public class ClientPlayNetworkMixin {
 	
 	private void checkIfDesync(List<Slot> list_of_slots) {
 		
+		if(!StonkCompanionClient.barrel_prices.containsKey(StonkCompanionClient.barrel_pos_found)) return;
+		
 		for(int i = 0; i < list_of_slots.size(); i++) {
 			
 			if(!StonkCompanionClient.barrel_changes.containsKey(i)) continue;
@@ -84,13 +87,15 @@ public class ClientPlayNetworkMixin {
 				//if(StonkCompanionClient.previous_action_qty_put != 0) StonkCompanionClient.barrel_transactions.get(StonkCompanionClient.barrel_pos_found).put(StonkCompanionClient.previous_action_name_put, StonkCompanionClient.barrel_transactions.get(StonkCompanionClient.barrel_pos_found).getOrDefault(StonkCompanionClient.previous_action_name_put, 0) - StonkCompanionClient.previous_action_qty_put);
 				//if(StonkCompanionClient.previous_action_qty_take != 0) StonkCompanionClient.barrel_transactions.get(StonkCompanionClient.barrel_pos_found).put(StonkCompanionClient.previous_action_name_take, StonkCompanionClient.barrel_transactions.get(StonkCompanionClient.barrel_pos_found).getOrDefault(StonkCompanionClient.previous_action_name_take, 0) + StonkCompanionClient.previous_action_qty_take);
 				
+				Barrel active_barrel = StonkCompanionClient.barrel_prices.get(StonkCompanionClient.barrel_pos_found);
+				
 				StonkCompanionClient.LOGGER.info("DESYNC DETECTED IN " + StonkCompanionClient.barrel_pos_found + ".");
-				if(StonkCompanionClient.previous_action_qty_put != 0) StonkCompanionClient.LOGGER.info("Prev put: x" + StonkCompanionClient.previous_action_qty_put + " " + StonkCompanionClient.previous_action_name_put);
-				if(StonkCompanionClient.previous_action_qty_take != 0) StonkCompanionClient.LOGGER.info("Prev take: x" + StonkCompanionClient.previous_action_qty_take + " " + StonkCompanionClient.previous_action_name_take);
-				StonkCompanionClient.previous_action_qty_put = 0;
-				StonkCompanionClient.previous_action_name_put = "";
-				StonkCompanionClient.previous_action_qty_take = 0;
-				StonkCompanionClient.previous_action_name_take = "";
+				if(active_barrel.previous_action_qty_put != 0) StonkCompanionClient.LOGGER.info("Prev put: x" + active_barrel.previous_action_qty_put + " " + active_barrel.previous_action_name_put);
+				if(active_barrel.previous_action_qty_take != 0) StonkCompanionClient.LOGGER.info("Prev take: x" + active_barrel.previous_action_qty_take + " " + active_barrel.previous_action_name_take);
+				active_barrel.previous_action_qty_put = 0;
+				active_barrel.previous_action_name_put = "";
+				active_barrel.previous_action_qty_take = 0;
+				active_barrel.previous_action_name_take = "";
 				StonkCompanionClient.action_been_done = false;
 				StonkCompanionClient.barrel_changes.clear();				
 				return;
@@ -99,7 +104,7 @@ public class ClientPlayNetworkMixin {
 		
 	}
 	
-	private void onClickActionMistradeCheck(String barrel_pos) {
+	/*private void onClickActionMistradeCheck(String barrel_pos) {
 		
 		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
 		if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) return;
@@ -131,9 +136,9 @@ public class ClientPlayNetworkMixin {
 		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
 	    	}
 	    }
-	}
+	}*/
 	
-	private void onClickActionAdd(String barrel_pos, String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
+	/*private void onClickActionAdd(String barrel_pos, String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
 		
 		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
 		
@@ -204,7 +209,7 @@ public class ClientPlayNetworkMixin {
 			}
 		}
 		
-	}
+	}*/
 	
 
 	@Inject(at = @At(value = "TAIL"), method = "onInventory(Lnet/minecraft/network/packet/s2c/play/InventoryS2CPacket;)V", cancellable = true)
@@ -244,7 +249,7 @@ public class ClientPlayNetworkMixin {
 			return;	
 		}*/
 		
-		if(StonkCompanionClient.is_mistrade_checking) {
+		/*if(StonkCompanionClient.is_mistrade_checking) {
 			
 			String[] fair_price_results = StonkCompanionClient.detectFairPrice(list_of_slots);
 			
@@ -287,7 +292,7 @@ public class ClientPlayNetworkMixin {
 				    
 				}
 			}
-		}
+		}*/
 		
 		if(StonkCompanionClient.is_mistrade_checking) {
 			
@@ -375,11 +380,18 @@ public class ClientPlayNetworkMixin {
 				if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
 					
 					// StonkCompanionClient.LOGGER.info("Created barrel at " + barrel_pos);
-					StonkCompanionClient.barrel_prices.put(barrel_pos, new Barrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+					StonkCompanionClient.barrel_prices.put(barrel_pos, new StonkBarrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+					if(StonkCompanionClient.barrel_prices.get(barrel_pos).barrel_type == BarrelTypes.STONK) {
+						if(StonkCompanionClient.fairprice_detection) {
+							StonkCompanionClient.barrel_prices.get(barrel_pos).calulateFairPrice(list_of_slots);
+						}else {
+							StonkCompanionClient.barrel_prices.get(barrel_pos).generateGuiText();
+						}
+					}
 				}
 				
 				StonkCompanionClient.barrel_pos_found = barrel_pos;
-				StonkCompanionClient.is_there_barrel_price = true;
+				// StonkCompanionClient.is_there_barrel_price = true;
 				
 				if(StonkCompanionClient.action_been_done) checkIfDesync(list_of_slots);
 				

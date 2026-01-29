@@ -23,6 +23,7 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.collection.DefaultedList;
 import net.stonkcompanion.main.Barrel;
+import net.stonkcompanion.main.Barrel.BarrelTypes;
 import net.stonkcompanion.main.StonkCompanionClient;
 
 @Mixin(ClientPlayerInteractionManager.class)
@@ -620,8 +621,8 @@ public class ClientPlayerInteractionManagerMixin {
 		// Nothing happened.
 		if(item_qty_taken == 0 && item_qty_put == 0) return;
 			
-		StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
-		StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);
+		/*StonkCompanionClient.barrel_transactions.putIfAbsent(barrel_pos, new HashMap<String, Integer>());
+		StonkCompanionClient.barrel_timeout.put(barrel_pos, 0);*/
 		
 		if(taken_item_name.startsWith("Tesseract of Knowledge (u)")) {
 			item_qty_taken = Integer.parseInt(taken_item_name.substring(27));
@@ -636,22 +637,37 @@ public class ClientPlayerInteractionManagerMixin {
 		onClickActionMistradeCheck(barrel_pos);
 		
 		StonkCompanionClient.action_been_done = true;
-			
-		if(item_qty_put != 0) {
-			StonkCompanionClient.barrel_transactions.get(barrel_pos).put(put_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(put_item_name, 0) + item_qty_put);
-			StonkCompanionClient.previous_action_qty_put = item_qty_put;
-			StonkCompanionClient.previous_action_name_put = put_item_name;
-		}else {
-			StonkCompanionClient.previous_action_qty_put = 0;
-			StonkCompanionClient.previous_action_name_put = "";
-		}
-		if(item_qty_taken != 0) {
-			StonkCompanionClient.barrel_transactions.get(barrel_pos).put(taken_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(taken_item_name, 0) - item_qty_taken);
-			StonkCompanionClient.previous_action_qty_take = item_qty_taken;
-			StonkCompanionClient.previous_action_name_take = taken_item_name;
-		}else {
-			StonkCompanionClient.previous_action_qty_take = 0;
-			StonkCompanionClient.previous_action_name_take = "";
+		
+		if(StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
+			Barrel active_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+			active_barrel.time_since_last_movement = 0;
+			if(item_qty_put != 0) {
+				active_barrel.barrel_transactions.put(put_item_name, active_barrel.barrel_transactions.getOrDefault(put_item_name, 0) + item_qty_put);
+				active_barrel.previous_action_name_put = put_item_name;
+				active_barrel.previous_action_qty_put = item_qty_put;
+				// StonkCompanionClient.barrel_transactions.get(barrel_pos).put(put_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(put_item_name, 0) + item_qty_put);
+				// StonkCompanionClient.previous_action_qty_put = item_qty_put;
+				// StonkCompanionClient.previous_action_name_put = put_item_name;
+			}else {
+				active_barrel.previous_action_name_put = "";
+				active_barrel.previous_action_qty_put = 0;
+				/*StonkCompanionClient.previous_action_qty_put = 0;
+				StonkCompanionClient.previous_action_name_put = "";*/
+			}
+			if(item_qty_taken != 0) {
+				active_barrel.barrel_transactions.put(taken_item_name, active_barrel.barrel_transactions.getOrDefault(taken_item_name, 0) - item_qty_taken);
+				active_barrel.previous_action_name_take = taken_item_name;
+				active_barrel.previous_action_qty_take = item_qty_taken;
+				
+				/*StonkCompanionClient.barrel_transactions.get(barrel_pos).put(taken_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(taken_item_name, 0) - item_qty_taken);
+				StonkCompanionClient.previous_action_qty_take = item_qty_taken;
+				StonkCompanionClient.previous_action_name_take = taken_item_name;*/
+			}else {
+				active_barrel.previous_action_name_take = "";
+				active_barrel.previous_action_qty_take = 0;
+				/*StonkCompanionClient.previous_action_qty_take = 0;
+				StonkCompanionClient.previous_action_name_take = "";*/
+			}
 		}
 		
 		if(StonkCompanionClient.is_verbose_logging && item_qty_put != 0) StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + put_item_name + " into the barrel.");
@@ -662,7 +678,9 @@ public class ClientPlayerInteractionManagerMixin {
 	private void onClickActionMistradeCheck(String barrel_pos) {
 		
 		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
-		if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) return;
+		
+		StonkCompanionClient.barrel_prices.get(barrel_pos).validateTransaction();
+		/*if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) return;
 		
 		Barrel traded_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
 		double other_items = StonkCompanionClient.barrel_actions.get(barrel_pos)[0];
@@ -690,14 +708,15 @@ public class ClientPlayerInteractionManagerMixin {
 	    	}else {
 		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
 	    	}
-	    }
+	    }*/
 	}
 	
 	private void onClickActionAdd(String barrel_pos, String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
 		
 		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
+		StonkCompanionClient.barrel_prices.get(barrel_pos).onClickActionAdd(taken_item_name, item_qty_taken, put_item_name, item_qty_put);
 		
-		int currency_type = StonkCompanionClient.barrel_prices.get(barrel_pos).currency_type;
+		/*int currency_type = StonkCompanionClient.barrel_prices.get(barrel_pos).currency_type;
 		String label = StonkCompanionClient.barrel_prices.get(barrel_pos).label;
 		
 		if(StonkCompanionClient.barrel_actions.get(barrel_pos) == null) {
@@ -762,7 +781,7 @@ public class ClientPlayerInteractionManagerMixin {
 					barrel_actions[0] += item_qty_put;
 				}
 			}
-		}
+		}*/
 		
 	}
 	

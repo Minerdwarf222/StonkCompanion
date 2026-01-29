@@ -22,6 +22,7 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.stonkcompanion.main.Barrel;
+import net.stonkcompanion.main.StonkBarrel;
 import net.stonkcompanion.main.StonkCompanionClient;
 
 @Mixin(HandledScreen.class)
@@ -101,12 +102,19 @@ public class HandledScreenMixin {
 		int barrelz = StonkCompanionClient.last_right_click.getZ();	
 		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
 		
-		if(!StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) {
-			StonkCompanionClient.barrel_prices.remove(barrel_pos);
-			return;
-		}
+		if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) return;
 		
-		StonkCompanionClient.mistradeCheck(barrel_pos, false);
+		Barrel active_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+		
+		boolean remove_barrel = active_barrel.validateTransaction();
+		
+	    if(!active_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal("[StonkCompanion] Mistrade detected in " + active_barrel.label));
+		
+	    if(!active_barrel.mistrade_text_message.isBlank() && !active_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal(active_barrel.mistrade_text_message));
+		
+		if(remove_barrel) {
+			StonkCompanionClient.barrel_prices.remove(barrel_pos);
+		}
 	}
 	
 	private void stonkCompanionOnCloseCheck(HandledScreen<?> screen) 
@@ -154,11 +162,10 @@ public class HandledScreenMixin {
 		int barrelz = StonkCompanionClient.last_right_click.getZ();	
 		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
 		
-		
-		if(!StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) {
+		/*if(!StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) {
 			StonkCompanionClient.barrel_transactions.remove(barrel_pos);
 			return;
-		};
+		};*/
 				
 		int currency_type = -1;
 		String label = "";
@@ -236,14 +243,27 @@ public class HandledScreenMixin {
 			return;
 		}
 		
+		Barrel closing_barrel = null;
+		
 		// Current assumption. Barrel doesn't change.
 		if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
-			
-			// StonkCompanionClient.LOGGER.info("Created barrel at " + barrel_pos);
-			StonkCompanionClient.barrel_prices.put(barrel_pos, new Barrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+			StonkCompanionClient.LOGGER.error("Created barrel on close at " + barrel_pos + ". This should not happen.");
+			closing_barrel = StonkCompanionClient.barrel_prices.put(barrel_pos, new StonkBarrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+		}else {
+			closing_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
 		}
 		
-		StonkCompanionClient.mistradeCheck(barrel_pos, false);
+		MinecraftClient mc = MinecraftClient.getInstance();
+		
+		boolean remove_barrel = closing_barrel.validateTransaction();
+		
+	    if(!closing_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal("[StonkCompanion] Mistrade detected in " + closing_barrel.label));
+		
+	    if(!closing_barrel.mistrade_text_message.isBlank()) mc.player.sendMessage(Text.literal(closing_barrel.mistrade_text_message));
+		
+		if(remove_barrel) {
+			StonkCompanionClient.barrel_prices.remove(barrel_pos);
+		}
 	}
 	
 	private void sendFairPriceMessage(List<Slot> items) {

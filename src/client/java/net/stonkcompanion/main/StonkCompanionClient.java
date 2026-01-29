@@ -45,7 +45,7 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
-
+import net.stonkcompanion.main.Barrel.BarrelTypes;
 import net.stonkcompanion.mixin.client.PlayerListHudAccessor;
 
 public class StonkCompanionClient implements ClientModInitializer{
@@ -103,14 +103,13 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
 	
 	// Mistrade checking :fire:
-	public static int transaction_lifetime = 15*60*20; // Measured in ticks. Thus 15 mins is 15 mins * 60 seconds per minute * 20 ticks per second.
 	public static boolean is_mistrade_checking = true;
-	public static HashMap<String, HashMap<String, Integer>> barrel_transactions = new HashMap<>();
-	public static HashMap<String, Integer> barrel_timeout = new HashMap<>();
+	// public static HashMap<String, HashMap<String, Integer>> barrel_transactions = new HashMap<>();
+	// public static HashMap<String, Integer> barrel_timeout = new HashMap<>();
 	public static HashMap<String, Barrel> barrel_prices = new HashMap<>();
-	public static HashMap<String, double[]> barrel_actions = new HashMap<>();
-	public static HashMap<String, Boolean> barrel_transaction_validity = new HashMap<>();
-	public static HashMap<String, String> barrel_transaction_solution = new HashMap<>();
+	// public static HashMap<String, double[]> barrel_actions = new HashMap<>();
+	// public static HashMap<String, Boolean> barrel_transaction_validity = new HashMap<>();
+	// public static HashMap<String, String> barrel_transaction_solution = new HashMap<>();
 	public static boolean anti_monu_inv_init = false;
 	public static boolean anti_monu_is_not_barrel = false;
 	public static boolean is_there_barrel_price = false;
@@ -570,7 +569,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	/*
 	 * As the name implies, this function is to go through every barrel in barrel_transactions and try to detect if any were mistrades.	
 	 */
-	public static void mistradeCheck(String barrel_pos, boolean hide_valid) {
+	/*public static void mistradeCheck(String barrel_pos, boolean hide_valid) {
 		
 		if (!barrel_prices.containsKey(barrel_pos)) {
 			return;
@@ -659,7 +658,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}
 		}
 			
-		/*
+		/
 		 * Here is where hell resides. Pretty printing the mistrades.
 		 * Barrel Name (Barrel Coordinates)
 		 * Buy: price in compressed (price as written on barrel)
@@ -669,7 +668,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		 * Unit Price: (net currency / number of mats)
 		 * Correction amount: (+/- currency to resolve mistrade.)
 		 * (If wrong_currency) Wrong Currency was used!
-		 */
+		 /
 			
 		if(valid_transaction && hide_valid) return;
 		
@@ -735,7 +734,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 			barrel_transaction_validity.remove(barrel_pos);
 			barrel_transaction_solution.remove(barrel_pos);
 		}
-	}
+	    
+	}*/
 	
 	public static String categoreyMaker(String label) {
 		// Changing barrel label "Stonk #" -> "Stonk"
@@ -782,11 +782,22 @@ public class StonkCompanionClient implements ClientModInitializer{
 		
 		MinecraftClient mc = MinecraftClient.getInstance();
 		
-		if(barrel_transactions.isEmpty()) {
+		if(barrel_prices.isEmpty()) {
 			mc.player.sendMessage(Text.literal("[StonkCompanion] There are no transactions."));
 		}else {	
-			for(String barrel_pos : barrel_transactions.keySet()) {
-				mistradeCheck(barrel_pos, true);
+			for(String barrel_pos : barrel_prices.keySet()) {
+				
+				Barrel active_barrel = barrel_prices.get(barrel_pos);
+				
+				boolean remove_barrel = active_barrel.validateTransaction();
+				
+			    if(!active_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal("[StonkCompanion] Mistrade detected in " + active_barrel.label));
+				
+			    if(!active_barrel.mistrade_text_message.isBlank() && !active_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal(active_barrel.mistrade_text_message));
+				
+				if(remove_barrel) {
+					StonkCompanionClient.barrel_prices.remove(barrel_pos);
+				}
 			}
 			
 			mc.player.sendMessage(Text.literal("[StonkCompanion] Done."));
@@ -822,12 +833,19 @@ public class StonkCompanionClient implements ClientModInitializer{
 		
 		action_been_done = true;
 		
-		barrel_transactions.putIfAbsent(quick_craft_barrel_pos, new HashMap<String, Integer>());
-		barrel_timeout.put(quick_craft_barrel_pos, 0);
-		barrel_transactions.get(quick_craft_barrel_pos).put(quick_craft_item_name, barrel_transactions.get(quick_craft_barrel_pos).getOrDefault(quick_craft_item_name, 0) + total_put_in_via_quick_craft);
+		Barrel active_barrel = barrel_prices.get(quick_craft_barrel_pos);
+		active_barrel.time_since_last_movement = 0;
+		active_barrel.barrel_transactions.put(quick_craft_item_name, active_barrel.barrel_transactions.getOrDefault(quick_craft_item_name, 0) + total_put_in_via_quick_craft);
+		
+		// barrel_transactions.putIfAbsent(quick_craft_barrel_pos, new HashMap<String, Integer>());
+		// barrel_timeout.put(quick_craft_barrel_pos, 0);
+		// barrel_transactions.get(quick_craft_barrel_pos).put(quick_craft_item_name, barrel_transactions.get(quick_craft_barrel_pos).getOrDefault(quick_craft_item_name, 0) + total_put_in_via_quick_craft);
 		if(StonkCompanionClient.is_verbose_logging && total_put_in_via_quick_craft != 0) StonkCompanionClient.LOGGER.info("Player put " + total_put_in_via_quick_craft + " of " + quick_craft_item_name + " into the barrel.");
 			
-		int currency_type = barrel_prices.get(quick_craft_barrel_pos).currency_type;
+		active_barrel.onClickActionAdd(quick_craft_item_name.toLowerCase(), total_put_in_via_quick_craft, "", 0);
+		active_barrel.validateTransaction();
+		
+		/*int currency_type = barrel_prices.get(quick_craft_barrel_pos).currency_type;
 		String label = barrel_prices.get(quick_craft_barrel_pos).label;
 			
 		barrel_actions.putIfAbsent(quick_craft_barrel_pos, new double[]{0.0, 0.0});
@@ -886,7 +904,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		   	}else {
 		    	StonkCompanionClient.barrel_transaction_solution.put(quick_craft_barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
 		   	}
-		}
+		}*/
 	}
 	
 	// @SuppressWarnings("resource")
@@ -935,18 +953,12 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}
 			
 			// Every tick increase the lifetime of every barrel and then check if it has exceeded it's lifetime.
-			for (String pos : barrel_timeout.keySet()) {
-				barrel_timeout.put(pos, barrel_timeout.get(pos)+1);
-				if(barrel_timeout.get(pos) >= transaction_lifetime) {
-					barrel_transactions.remove(pos);
-					barrel_prices.remove(pos);
-					barrel_actions.remove(pos);
-					barrel_transaction_solution.remove(pos);
-					barrel_transaction_validity.remove(pos);
-					}
+			for (String pos : barrel_prices.keySet()) {
+				barrel_prices.get(pos).increment_time();
+				barrel_prices.get(pos).updateGuiTimestamp();
 			}
 			
-			barrel_timeout.entrySet().removeIf(entry -> (entry.getValue() >= transaction_lifetime));
+			barrel_prices.entrySet().removeIf(entry -> (entry.getValue().is_time_over()));
 			
 		});
 		
@@ -1078,21 +1090,29 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    				context.getSource().sendFeedback(Text.literal(has_offhandswap_off ? "[StonkCompanion] Registering that offhand swap is allowed in peb." : "[StonkCompanion] Registering that offhand swap is not allowed in peb."));
 	    				has_offhandswap_off = !has_offhandswap_off;	
 	    			}else if(given_command.equals("ClearReports")) {
-	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Clearing all transactions."));    				
-	    				barrel_timeout.clear();
-	    				barrel_transactions.clear();
+	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Clearing all transactions."));
+	    				
+	    				//barrel_timeout.clear();
+	    				//barrel_transactions.clear();
 	    				barrel_prices.clear();
-	    				barrel_actions.clear();
-	    				barrel_transaction_solution.clear();
-	    				barrel_transaction_validity.clear();
+	    				//barrel_actions.clear();
+	    				//barrel_transaction_solution.clear();
+	    				//barrel_transaction_validity.clear();
 	    				
 	    			}else if(given_command.equals("ToggleCompressed")) {
 	    				context.getSource().sendFeedback(Text.literal(is_compressed_only ? "[StonkCompanion] Showing hyper and compressed now." : "[StonkCompanion] Showing only in compressed."));
 	    				is_compressed_only = !is_compressed_only;
 	    				
-	    				for(String barrel_pos : barrel_transaction_solution.keySet()) {
-	    				
-	    					if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) continue;
+	    				for(String barrel_pos : barrel_prices.keySet()) {
+	    					
+	    					if(barrel_prices.get(barrel_pos) == null) {
+	    						barrel_prices.remove(barrel_pos);
+	    						continue;
+	    					}
+	    					
+	    					barrel_prices.get(barrel_pos).convertSolutionToCompressed();
+	    					
+	    					/*if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) continue;
 	    					if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) continue;
 	    					
 	    					Barrel traded_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
@@ -1117,8 +1137,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    				    	}else {
 	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
 	    				    	}
-	    				    }
-	    				}    				    
+	    				    }*/
+	    				}	    
 	    			}
 	    			return 1;
 	    		}

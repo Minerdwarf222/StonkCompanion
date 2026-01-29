@@ -31,7 +31,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
     private final Screen parent;
     
     private final int background_rect_width = 165;
-    private final int background_rect_height = 180;
+    private final int background_rect_height = 190;
 	
     public void init() {
     	clear();
@@ -65,17 +65,12 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 	@Override
 	public void render(DrawContext draw_context, int mouseX, int mouseY, float delta) {
 		
-		if(!StonkCompanionClient.is_there_barrel_price) return;
+		if(StonkCompanionClient.barrel_pos_found.isBlank()) return;
 		
 		Barrel given_barrel = StonkCompanionClient.barrel_prices.get(StonkCompanionClient.barrel_pos_found);
 		
-		int time_left = -1;
-		
-		if(StonkCompanionClient.barrel_timeout.containsKey(StonkCompanionClient.barrel_pos_found)) {
-			time_left = (int)((StonkCompanionClient.transaction_lifetime - StonkCompanionClient.barrel_timeout.get(StonkCompanionClient.barrel_pos_found))/20);
-		}
-		
 		if(given_barrel == null) return;
+		if(given_barrel.gui_text == null) return;
 		
 		Rectangle dimension = getDimension();
 		
@@ -86,7 +81,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		
 		int left_indent = 5;
 		
-		int red_color = 0xffff0000;
+		// int red_color = 0xffff0000;
 		int yellow_color = 0xffffff00;
 		int green_color = 0xff00ff00;
 		int light_blue_color = 0xff00ffff;
@@ -104,105 +99,28 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		//draw_context.drawTextWithShadow(client.textRenderer, "Co", dimension.x+45+client.textRenderer.getWidth("Stonk"), dimension.y+y_diff_text, green_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "mpanion", dimension.x+45+client.textRenderer.getWidth("StonkCo"), dimension.y+y_diff_text, light_blue_color);
 		y_diff_text += font_height + 1;
-		draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
-		//draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+1+y_diff_text, light_blue_color);
-		y_diff_text += 2 + 1;
 		
-		draw_context.drawCenteredTextWithShadow(client.textRenderer, given_barrel.label, (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
 		
-		y_diff_text += font_height + 1;
-		MutableText buy_for = Text.literal("Buy For: ");
-		buy_for = buy_for.withColor(green_color);
-		buy_for.append(Text.literal("%s".formatted(given_barrel.ask_str)).withColor(light_blue_color));
+		// Current issue. How do I detect lines that need to be centered? I could just do a boolean array or smth idk.
+		for(Text[] given_text_segment : given_barrel.gui_text) {
+			if(given_text_segment == null) continue;
+			boolean printed_line = false;
+			for(Text given_text : given_text_segment) {
+				if(given_text == null) continue;
+				if(!printed_line) {
+					draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
+					y_diff_text += 2 + 1;
+					printed_line = true;
+				}
+				
+				draw_context.drawTextWithShadow(client.textRenderer, given_text, dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+				y_diff_text += font_height + 1;
+			}
+		}
+		
+		// draw_context.drawCenteredTextWithShadow(client.textRenderer, given_barrel.label, (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
+		// draw_context.drawCenteredTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? Text.literal("Valid Trade").formatted(Formatting.BOLD) : Text.literal("Invalid Trade").formatted(Formatting.BOLD), (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
 
-		draw_context.drawTextWithShadow(client.textRenderer, buy_for, dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-		//draw_context.drawTextWithShadow(client.textRenderer, "Buy For: %s".formatted(given_barrel.ask_str), dimension.x+5, dimension.y+y_diff_text, green_color);
-		y_diff_text += font_height + 1;
-		
-		MutableText sell_for = Text.literal("Sell For: ");
-		sell_for = sell_for.withColor(red_color);
-		sell_for.append(Text.literal("%s".formatted(given_barrel.bid_str)).withColor(light_blue_color));
-		
-		draw_context.drawTextWithShadow(client.textRenderer, sell_for, dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-		//draw_context.drawTextWithShadow(client.textRenderer, "Sell For: %s".formatted(given_barrel.bid_str), dimension.x+5, dimension.y+y_diff_text, red_color);
-		
-		if(!StonkCompanionClient.fairprice_currency_str.equals("N/A")) {
-			y_diff_text += font_height + 1;
-			if(StonkCompanionClient.fairprice_val <= given_barrel.compressed_bid_price*1.0001) {
-				draw_context.drawTextWithShadow(client.textRenderer, "Look in lower barrel.", dimension.x+5, dimension.y+y_diff_text, light_blue_color);
-			}else if(StonkCompanionClient.fairprice_val >= given_barrel.compressed_ask_price*0.9999) {
-				draw_context.drawTextWithShadow(client.textRenderer, "Look in higher barrel.", dimension.x+5, dimension.y+y_diff_text, light_blue_color);
-			}else {
-				if(StonkCompanionClient.fairprice_val > 0) {
-					draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s %s".formatted(StonkCompanionClient.df1.format(StonkCompanionClient.fairprice_val), StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
-				}else if(StonkCompanionClient.fairprice_val == -1) {
-					String[] forex_fairstonk = StonkCompanionClient.fairprice_currency_str.split("|");
-					draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %s".formatted(forex_fairstonk[0]), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
-					y_diff_text += font_height + 1;
-					draw_context.drawTextWithShadow(client.textRenderer, "                  %s".formatted(forex_fairstonk[1]), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
-				}
-			}
-			/* Non-compressed is too long.
-			if(StonkCompanionClient.is_compressed_only) {
-				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %.2f %s".formatted(StonkCompanionClient.fairprice_val, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
-			}else {
-				draw_context.drawTextWithShadow(client.textRenderer, "Fair Stonk Price: %d %s %.2f %s".formatted((int)(StonkCompanionClient.fairprice_val/64), StonkCompanionClient.currency_type_to_hyper_text.get(given_barrel.currency_type), StonkCompanionClient.fairprice_val%64, StonkCompanionClient.fairprice_currency_str), dimension.x+5, dimension.y+y_diff_text, light_blue_color);
-			}*/
-		}
-		//draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+y_diff_text, light_blue_color);
-		if (StonkCompanionClient.barrel_actions.containsKey(given_barrel.coords) && (StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0] != 0 || StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1] != 0)) {
-			y_diff_text += font_height + 1;
-			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
-			y_diff_text += 2 + 1;
-			draw_context.drawTextWithShadow(client.textRenderer, "Recent Interactions:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			if(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0] != 0) {
-				y_diff_text += font_height + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "%s %s Mat%s".formatted((StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0] < 0) ? "Removed" : "Added", StonkCompanionClient.df1.format(Math.abs(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0])), Math.abs(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[0]) == 1 ? "" : "s"), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			}
-			if(StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1] != 0) {
-				y_diff_text += font_height + 1;
-				double barrel_actions_money = StonkCompanionClient.barrel_actions.get(given_barrel.coords)[1];
-				if(StonkCompanionClient.is_compressed_only) {
-					draw_context.drawTextWithShadow(client.textRenderer, "%s %s %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", StonkCompanionClient.df1.format(Math.abs(barrel_actions_money)), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-				}else {
-					draw_context.drawTextWithShadow(client.textRenderer, "%s %d %s %s %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", (int)((Math.abs(barrel_actions_money)/64)), StonkCompanionClient.currency_type_to_hyper_text.get(given_barrel.currency_type), StonkCompanionClient.df1.format(Math.abs(barrel_actions_money%64)), StonkCompanionClient.currency_type_to_compressed_text.get(given_barrel.currency_type)), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-				}
-			}
-			// draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+y_diff_text, light_blue_color);
-		}
-		if (time_left != -1) {
-			int seconds_since_last_interaction = (int)StonkCompanionClient.barrel_timeout.get(StonkCompanionClient.barrel_pos_found)/20;
-			ZonedDateTime current_time = ZonedDateTime.now().minusSeconds(seconds_since_last_interaction);	
-			y_diff_text += font_height + 1;
-			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
-			y_diff_text += 2 + 1;
-			draw_context.drawTextWithShadow(client.textRenderer, "Last Interaction: %s".formatted(current_time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			y_diff_text += font_height + 1;
-			draw_context.drawTextWithShadow(client.textRenderer, "Refund period ends in: %d:%02d".formatted((int)time_left/60, time_left%60), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-		}
-		if(StonkCompanionClient.barrel_transaction_validity.containsKey(given_barrel.coords)) {
-			y_diff_text += font_height + 1;
-			draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
-			y_diff_text += 2 + 1;
-			draw_context.drawCenteredTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? Text.literal("Valid Trade").formatted(Formatting.BOLD) : Text.literal("Invalid Trade").formatted(Formatting.BOLD), (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
-			//draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			if(!StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) && StonkCompanionClient.barrel_transaction_solution.containsKey(given_barrel.coords)) {
-				y_diff_text += font_height + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "Suggested Fix:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-				y_diff_text += font_height + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_solution.get(given_barrel.coords), dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			}
-			//y_diff_text += font_height + 1;
-			//draw_context.drawTextWithShadow(client.textRenderer, "OR Take / Add Y", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			if(!StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords)) {
-				y_diff_text += font_height + 1;
-				draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
-				y_diff_text += 2 + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "If this report is in error, type:", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-				y_diff_text += font_height + 1;
-				draw_context.drawTextWithShadow(client.textRenderer, "/StonkCompanion ClearReports", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			}
-		}
 		y_diff_text += font_height + 1;
 		draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);		
 	}
