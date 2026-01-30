@@ -20,11 +20,12 @@ public class Barrel {
 	public String coords = "";
 	public int time_since_last_movement = 0;
 	public HashMap<String, Integer> barrel_transactions = new HashMap<>();
-	public double[] barrel_actions = new double[2];
-	public boolean barrel_transaction_validity = false;
+	public double[] barrel_actions = new double[]{0.0, 0.0};
+	public boolean barrel_transaction_validity = true;
 	public String barrel_transaction_solution = "";
 	public String mistrade_text_message = "";
 	public String fairprice_text_message = "";
+	public String fairprice_gui_message = "";
 	public Text[][] gui_text = null;
 	
 	public String previous_action_name_take = "";
@@ -50,5 +51,9 @@ public class Barrel {
 	public void calulateFairPrice(List<Slot> items) {}
 	public void onClickActionAdd(String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {}
 	public void convertSolutionToCompressed() {}
+	
+	public String toString() {
+		return "Label: " + label + " Coords: " + coords + " time: " + time_since_last_movement;
+	}
 	
 }

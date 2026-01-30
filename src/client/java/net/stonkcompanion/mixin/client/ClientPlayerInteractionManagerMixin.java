@@ -634,7 +634,6 @@ public class ClientPlayerInteractionManagerMixin {
 		}
 			
 		onClickActionAdd(barrel_pos, taken_item_name, item_qty_taken, put_item_name, item_qty_put);
-		onClickActionMistradeCheck(barrel_pos);
 		
 		StonkCompanionClient.action_been_done = true;
 		
@@ -643,6 +642,7 @@ public class ClientPlayerInteractionManagerMixin {
 			active_barrel.time_since_last_movement = 0;
 			if(item_qty_put != 0) {
 				active_barrel.barrel_transactions.put(put_item_name, active_barrel.barrel_transactions.getOrDefault(put_item_name, 0) + item_qty_put);
+				if(active_barrel.barrel_transactions.get(put_item_name) == 0) active_barrel.barrel_transactions.remove(put_item_name);
 				active_barrel.previous_action_name_put = put_item_name;
 				active_barrel.previous_action_qty_put = item_qty_put;
 				// StonkCompanionClient.barrel_transactions.get(barrel_pos).put(put_item_name, StonkCompanionClient.barrel_transactions.get(barrel_pos).getOrDefault(put_item_name, 0) + item_qty_put);
@@ -656,6 +656,7 @@ public class ClientPlayerInteractionManagerMixin {
 			}
 			if(item_qty_taken != 0) {
 				active_barrel.barrel_transactions.put(taken_item_name, active_barrel.barrel_transactions.getOrDefault(taken_item_name, 0) - item_qty_taken);
+				if(active_barrel.barrel_transactions.get(taken_item_name) == 0) active_barrel.barrel_transactions.remove(taken_item_name);
 				active_barrel.previous_action_name_take = taken_item_name;
 				active_barrel.previous_action_qty_take = item_qty_taken;
 				
@@ -669,6 +670,8 @@ public class ClientPlayerInteractionManagerMixin {
 				StonkCompanionClient.previous_action_name_take = "";*/
 			}
 		}
+		
+		onClickActionMistradeCheck(barrel_pos);
 		
 		if(StonkCompanionClient.is_verbose_logging && item_qty_put != 0) StonkCompanionClient.LOGGER.info("Player put " + item_qty_put + " of " + put_item_name + " into the barrel.");
 		if(StonkCompanionClient.is_verbose_logging && item_qty_taken != 0) StonkCompanionClient.LOGGER.info("Player took " + item_qty_taken + " of " + taken_item_name + " from the barrel.");

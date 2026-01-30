@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.joml.Math;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.MutableText;
@@ -29,6 +28,8 @@ public class StonkBarrel extends Barrel {
 		super(label, coords);
 		this.ask_price = ask_price;
 		this.bid_price = bid_price;
+		this.ask_str = ask_price.replace("buy for", "").trim();
+		this.bid_str = bid_price.replace("sell for", "").trim();
 		this.compressed_ask_price = compressed_ask_price;
 		this.compressed_bid_price = compressed_bid_price;
 		this.currency_type = currency_type;
@@ -36,6 +37,7 @@ public class StonkBarrel extends Barrel {
 	}
 	
 	public void convertSolutionToCompressed() {
+		
 		double other_items = barrel_actions[0];
 		double actual_compressed = barrel_actions[1];
 		
@@ -57,6 +59,9 @@ public class StonkBarrel extends Barrel {
 	    	}else {
 		    	barrel_transaction_solution = "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str);
 	    	}
+	    }else {
+	    	barrel_transaction_solution = "";
+	    	barrel_transaction_validity = true;
 	    }
 	}
 	
@@ -72,7 +77,7 @@ public class StonkBarrel extends Barrel {
 			int item_currency_type = StonkCompanionClient.getCurrencyType(taken_item_name_lc);
 			
 			if(currency_type == item_currency_type) {
-				barrel_actions[1] -= StonkCompanionClient.givenCurrReturnMult(taken_item_name_lc);
+				barrel_actions[1] -= StonkCompanionClient.givenCurrReturnMult(taken_item_name_lc)*(double)(item_qty_taken);
 			}else if(item_currency_type == 0) {
 				if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
 					barrel_actions[0] -= (double)(item_qty_taken)/64.0;
@@ -88,7 +93,7 @@ public class StonkBarrel extends Barrel {
 			int item_currency_type = StonkCompanionClient.getCurrencyType(put_item_name_lc);
 			
 			if(currency_type == item_currency_type) {
-				barrel_actions[1] += StonkCompanionClient.givenCurrReturnMult(put_item_name_lc);
+				barrel_actions[1] += StonkCompanionClient.givenCurrReturnMult(put_item_name_lc)*(double)(item_qty_put);
 			}else if(item_currency_type == 0) {
 				if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
 					barrel_actions[0] += (double)(item_qty_put)/64.0;
@@ -135,12 +140,14 @@ public class StonkBarrel extends Barrel {
 		sell_for.append(Text.literal("%s".formatted(bid_str)).withColor(light_blue_color));
 		
 		gui_text[0][2] = sell_for;
-		if(StonkCompanionClient.fairprice_detection) gui_text[0][3] = Text.literal(fairprice_text_message);
+		if(StonkCompanionClient.fairprice_detection && !fairprice_gui_message.isBlank()) gui_text[0][3] = Text.literal(fairprice_gui_message);
 		
 		if (barrel_actions[0] != 0 || barrel_actions[1] != 0) {
 			gui_text[1][0] = Text.literal("Recent Interactions:");
 			if(barrel_actions[0] != 0) {
 				gui_text[1][1] = Text.literal("%s %s Mat%s".formatted((barrel_actions[0] < 0) ? "Removed" : "Added", StonkCompanionClient.df1.format(Math.abs(barrel_actions[0])), Math.abs(barrel_actions[0]) == 1 ? "" : "s"));
+			}else {
+				gui_text[1][1] = null;
 			}
 			if(barrel_actions[1] != 0) {
 				double barrel_actions_money = barrel_actions[1];
@@ -149,38 +156,49 @@ public class StonkBarrel extends Barrel {
 				}else {
 					gui_text[1][2] = Text.literal("%s %d %s %s %s".formatted((barrel_actions_money < 0) ? "Removed" : "Added", (int)((Math.abs(barrel_actions_money)/64)), StonkCompanionClient.currency_type_to_hyper_text.get(currency_type), StonkCompanionClient.df1.format(Math.abs(barrel_actions_money%64)), StonkCompanionClient.currency_type_to_compressed_text.get(currency_type)));
 				}
+			}else {
+				gui_text[1][2] = null;
 			}
 			// draw_context.drawTextWithShadow(client.textRenderer, "===========================", dimension.x+1, dimension.y+y_diff_text, light_blue_color);
 		}
 		
 		if(!barrel_transactions.isEmpty()) {
-			
 			int time_left = -1;
-
+	
 			time_left = (int)((Barrel.transaction_lifetime - time_since_last_movement)/20);
-				
+					
 			if (time_left != -1) {
 				int seconds_since_last_interaction = (int)time_since_last_movement/20;
 				ZonedDateTime current_time = ZonedDateTime.now().minusSeconds(seconds_since_last_interaction);	
-
+	
 				gui_text[2][0] = Text.literal("Last Interaction: %s".formatted(current_time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))));
-				
+					
 				gui_text[2][1] = Text.literal("Refund period ends in: %d:%02d".formatted((int)time_left/60, time_left%60));
 			}
-			
+				
 			gui_text[3][0] = barrel_transaction_validity ? Text.literal("Valid Trade").formatted(Formatting.BOLD) : Text.literal("Invalid Trade").formatted(Formatting.BOLD);
-			//draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-			if(!barrel_transaction_validity&& !barrel_transaction_solution.isBlank()) {
+		}else {
+			gui_text[2][0] = null;
+			gui_text[2][1] = null;
+			gui_text[3][0] = null;
+		}
+		//draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
+		if(!barrel_transaction_validity && !barrel_transaction_solution.isBlank()) {
 				
-				gui_text[3][1] = Text.literal("Suggested Fix:");
-				gui_text[3][2] = Text.literal(barrel_transaction_solution);
+			gui_text[3][1] = Text.literal("Suggested Fix:");
+			gui_text[3][2] = Text.literal(barrel_transaction_solution);
 				
-			}
+		}else {
+			gui_text[3][1] = null;
+			gui_text[3][2] = null;
+		}
 			
-			if(!barrel_transaction_validity) {
-				gui_text[4][0] = Text.literal("If this report is in error, type:");
-				gui_text[4][1] = Text.literal("/StonkCompanion ClearReports");
-			}
+		if(!barrel_transaction_validity) {
+			gui_text[4][0] = Text.literal("If this report is in error, type:");
+			gui_text[4][1] = Text.literal("/StonkCompanion ClearReports");
+		}else {
+			gui_text[4][0] = null;
+			gui_text[4][1] = null;
 		}
 	}
 	
@@ -191,6 +209,7 @@ public class StonkBarrel extends Barrel {
 			if(gui_text[2] != null) gui_text[2] = null;
 			return;
 		}
+		if(gui_text[2] == null) return;
 		
 		int time_left = -1;
 
@@ -282,6 +301,9 @@ public class StonkBarrel extends Barrel {
 		//LOGGER.info("Effective mats: %.3f".formatted(effective_mats));
 		    
 		if(effective_mats == 0) {
+			this.fairprice_text_message = "";
+			this.fairprice_gui_message = "";
+			generateGuiText();
 		  	return;
 		}
 		    
@@ -299,16 +321,18 @@ public class StonkBarrel extends Barrel {
 		    
 		// TODO: Add label
 		String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(interpolated_price), currency_str, interpolated_hyper_amount, hyper_str, StonkCompanionClient.df1.format(interpolated_compressed_amount), currency_str);
-		    
-		if(StonkCompanionClient.is_showing_text) {
-			if(demand_modifier <= 0.005) {
-		      	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
-		    }else if(demand_modifier >= 0.995) {
-		       	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
-		    }
+		String fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(interpolated_price), currency_str);
+		
+		if(demand_modifier <= 0.005) {
+			fairprice_msg = "[StonkCompanion] Look in lower barrel.";
+			fairprice_gui_msg = "Look in lower barrel.";
+		}else if(demand_modifier >= 0.995) {
+		   	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
+		   	fairprice_gui_msg = "Look in higher barrel.";
 		}		
 		
 		this.fairprice_text_message = fairprice_msg;
+		this.fairprice_gui_message = fairprice_gui_msg;
 		generateGuiText();
 	}
 	
@@ -316,6 +340,8 @@ public class StonkBarrel extends Barrel {
 		
 		if (barrel_transactions.isEmpty()) {
 			barrel_transaction_validity = true;
+			barrel_transaction_solution = "";
+			generateGuiText();
 			return true;
 		}
 			
@@ -466,12 +492,20 @@ public class StonkBarrel extends Barrel {
 		build_mistrade_text.append("\nTime since last log: %ds/%ds".formatted(time_since_last_movement/20, transaction_lifetime/20));
 		if(wrong_currency) build_mistrade_text.append("\nWrong currency was used!");
 		build_mistrade_text.append("\n--------------------");
+		
+		mistrade_text_message = build_mistrade_text.toString();
 	    
+		generateGuiText();
+		
 	    if(other_items == 0 && currency_delta == 0 && !wrong_currency) {
 			return true;
 		}
-	    generateGuiText();
 	    return false;
+	}
+	
+	public String toString() {
+		String start = super.toString();
+		return start + " ask_str: " + ask_str + " bid_str: " + bid_str;
 	}
 
 }

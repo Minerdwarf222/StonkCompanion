@@ -121,7 +121,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		// draw_context.drawCenteredTextWithShadow(client.textRenderer, given_barrel.label, (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
 		// draw_context.drawCenteredTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? Text.literal("Valid Trade").formatted(Formatting.BOLD) : Text.literal("Invalid Trade").formatted(Formatting.BOLD), (int)dimension.getCenterX(), dimension.y+y_diff_text, light_blue_color);
 
-		y_diff_text += font_height + 1;
+		// y_diff_text += font_height + 1;
 		draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);		
 	}
 	

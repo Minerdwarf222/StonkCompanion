@@ -381,14 +381,15 @@ public class ClientPlayNetworkMixin {
 					
 					// StonkCompanionClient.LOGGER.info("Created barrel at " + barrel_pos);
 					StonkCompanionClient.barrel_prices.put(barrel_pos, new StonkBarrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
-					if(StonkCompanionClient.barrel_prices.get(barrel_pos).barrel_type == BarrelTypes.STONK) {
-						if(StonkCompanionClient.fairprice_detection) {
-							StonkCompanionClient.barrel_prices.get(barrel_pos).calulateFairPrice(list_of_slots);
-						}else {
-							StonkCompanionClient.barrel_prices.get(barrel_pos).generateGuiText();
-						}
-					}
 				}
+				
+				if(StonkCompanionClient.fairprice_detection) {
+					StonkCompanionClient.barrel_prices.get(barrel_pos).calulateFairPrice(list_of_slots);
+				}else {
+					StonkCompanionClient.barrel_prices.get(barrel_pos).generateGuiText();
+				}
+				
+				StonkCompanionClient.LOGGER.info(StonkCompanionClient.barrel_prices.get(barrel_pos).toString());
 				
 				StonkCompanionClient.barrel_pos_found = barrel_pos;
 				// StonkCompanionClient.is_there_barrel_price = true;

@@ -836,13 +836,14 @@ public class StonkCompanionClient implements ClientModInitializer{
 		Barrel active_barrel = barrel_prices.get(quick_craft_barrel_pos);
 		active_barrel.time_since_last_movement = 0;
 		active_barrel.barrel_transactions.put(quick_craft_item_name, active_barrel.barrel_transactions.getOrDefault(quick_craft_item_name, 0) + total_put_in_via_quick_craft);
+		if(active_barrel.barrel_transactions.get(quick_craft_item_name) == 0) active_barrel.barrel_transactions.remove(quick_craft_item_name);
 		
 		// barrel_transactions.putIfAbsent(quick_craft_barrel_pos, new HashMap<String, Integer>());
 		// barrel_timeout.put(quick_craft_barrel_pos, 0);
 		// barrel_transactions.get(quick_craft_barrel_pos).put(quick_craft_item_name, barrel_transactions.get(quick_craft_barrel_pos).getOrDefault(quick_craft_item_name, 0) + total_put_in_via_quick_craft);
 		if(StonkCompanionClient.is_verbose_logging && total_put_in_via_quick_craft != 0) StonkCompanionClient.LOGGER.info("Player put " + total_put_in_via_quick_craft + " of " + quick_craft_item_name + " into the barrel.");
 			
-		active_barrel.onClickActionAdd(quick_craft_item_name.toLowerCase(), total_put_in_via_quick_craft, "", 0);
+		active_barrel.onClickActionAdd("", 0, quick_craft_item_name.toLowerCase(), total_put_in_via_quick_craft);
 		active_barrel.validateTransaction();
 		
 		/*int currency_type = barrel_prices.get(quick_craft_barrel_pos).currency_type;
