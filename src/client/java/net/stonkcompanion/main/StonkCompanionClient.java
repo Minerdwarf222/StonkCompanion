@@ -1026,6 +1026,14 @@ public class StonkCompanionClient implements ClientModInitializer{
 				temp_name_item = temp_name_item.replace("literal{", "");
 				temp_name_item = temp_name_item.substring(0, temp_name_item.indexOf("}"));
 				
+				// Hard coding this since I hate Text, and this is the only item with this issue atm I think?
+				// literal{I}[style={color=#BE93E4,bold}, siblings=[literal{nversion Aegis}[style={color=white}],
+				if(temp_name_item.equals("I")) {
+					if (backup_name_item.substring(57, 71).equals("nversion Aegis")) {
+						temp_name_item = "Inversion Aegis";
+					}
+				}
+				
 				if (temp_name_item.equals("Tesseract of Knowledge (u)")) {
 					int indx_of_anvil_count = backup_name_item.indexOf("literal{Stored anvils: }");
 					   
