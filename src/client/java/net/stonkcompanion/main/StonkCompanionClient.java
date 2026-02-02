@@ -170,7 +170,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}else if(s.equals("concentrated experience") || s.equals("compressed crystalline shard") || s.equals("archos ring")) {
 			mult = 1;
 		}else if(s.equals("experience bottle") || s.equals("crystalline shard")) {
-			mult = 1/8;
+			mult = 1.0/8.0;
 		}
 		
 		return mult;

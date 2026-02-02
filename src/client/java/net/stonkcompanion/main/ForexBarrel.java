@@ -52,6 +52,12 @@ public class ForexBarrel extends Barrel {
 		
 	}
 	
+	public void clearBarrelTransactions() {
+		super.clearBarrelTransactions();
+		wrong_currency = false;
+		barrel_transaction_full_hyper_solution = "";
+	}
+	
 	public void onClickActionAdd(String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
 		
 		if(barrel_actions == null) {
@@ -402,13 +408,13 @@ public class ForexBarrel extends Barrel {
         		// Currency_one was added, but not in a full hyper amount. Therefore this is a non-full hyper input mistrade.
         		// I guess add the difference till it reaches 64? So if 1 hcs 1 ccs then they owe +63 ccs?
         		full_hyper_owed = currency_one%64;
-                expected_compressed = -1*((currency_one+full_hyper_owed)/64)*one_to_two;
+                expected_compressed = -1.0*((currency_one+full_hyper_owed)/64)*one_to_two;
                 
                 currency_full_str = currency_one_str;
                 hyper_full_str = hyper_one_str;
                 
         	}else {
-                expected_compressed = -1*(currency_one/64)*one_to_two;        		
+                expected_compressed = -1.0*(currency_one/64)*one_to_two;        		
         	}
         	
             actual_compressed = currency_two;
@@ -419,15 +425,15 @@ public class ForexBarrel extends Barrel {
         } else {
             // currency_one was taken, so currency_one's expected amount can be predicted from it
         	
-        	if (currency_two % 64 != 0) {
+        	if (currency_two > 0 && currency_two % 64 != 0) {
         		full_hyper_owed = currency_two%64;
-        		expected_compressed = -1*((currency_two+full_hyper_owed)/64)*two_to_one;
+        		expected_compressed = -1.0*((currency_two+full_hyper_owed)/64)*two_to_one;
         		
                 currency_full_str = currency_two_str;
                 hyper_full_str = hyper_two_str;
         		
         	}else {
-        		expected_compressed = -1*(currency_two/64)*two_to_one;
+        		expected_compressed = -1.0*(currency_two/64)*two_to_one;
         	}
         	
             actual_compressed = currency_one;
@@ -478,7 +484,7 @@ public class ForexBarrel extends Barrel {
 		
 		generateGuiText();
 		
-	    if(other_items == 0 && currency_delta == 0 && !wrong_currency) {
+	    if(other_items == 0 && currency_delta == 0 && !wrong_currency && full_hyper_owed != 0 && barrel_transactions.isEmpty()) {
 			return true;
 		}
 		

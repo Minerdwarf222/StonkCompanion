@@ -38,12 +38,18 @@ public class StonkBarrel extends Barrel {
 		this.barrel_type = BarrelTypes.STONK;
 	}
 	
+	public void clearBarrelTransactions() {
+		super.clearBarrelTransactions();
+		wrong_currency = false;
+		barrel_transaction_solution_mats = "";
+	}
+	
 	public void convertSolutionToCompressed() {
 		
 		double other_items = barrel_actions[0];
 		double actual_compressed = barrel_actions[1];
 		
-		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*compressed_ask_price : -1*other_items*compressed_bid_price;
+		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*compressed_ask_price : -1.0*other_items*compressed_bid_price;
 		
 	    double currency_delta = expected_compressed - actual_compressed;
 	    
@@ -244,34 +250,13 @@ public class StonkBarrel extends Barrel {
 			
 			double mult = StonkCompanionClient.givenCurrReturnMult(item_name);
 			
-			if (currency_type < 0) {
-				// Forex barrel
-
-				int item_currency = StonkCompanionClient.getCurrencyType(item_name);
-
-				// If this is a forex barrel, we will assume that one_to_two is the ask and two_to_one is the bid.		
-				if (item_currency == 1) {
-					if (currency_type == -1) barrel_compressed_currency += item_qty*mult;
-					if (currency_type == -2) barrel_mats += item_qty*mult;
-					if (currency_type == -3) ; // Could fire an error here as an unexpected currency was detected
-				} else if (item_currency == 2) {
-					if (currency_type == -1) barrel_mats += item_qty*mult;
-					if (currency_type == -2) ; // Could fire an error here as an unexpected currency was detected
-					if (currency_type == -3) barrel_compressed_currency += item_qty*mult;
-				} else if (item_currency == 3) {
-					if (currency_type == -1) ; // Could fire an error here as an unexpected currency was detected
-					if (currency_type == -2) barrel_compressed_currency += item_qty*mult;
-					if (currency_type == -3) barrel_mats += item_qty*mult;
-				}
-
-			} else {
-				// Stonk barrel
-				if(mult == -1) {
-					barrel_mats += item_qty;
-				}else {
-					barrel_compressed_currency += item_qty * mult;
-				}
+			// Stonk barrel
+			if(mult == -1) {
+				barrel_mats += item_qty;
+			}else {
+				barrel_compressed_currency += item_qty * mult;
 			}
+
 		}
 		
 		// Checking for stacks barrels.
@@ -375,7 +360,7 @@ public class StonkBarrel extends Barrel {
 		}
 			
 		// Okay we have all our ducks in a row. Now to verify if this trade was correct.
-		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*compressed_ask_price : -1*other_items*compressed_bid_price;
+		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*compressed_ask_price : -1.0*other_items*compressed_bid_price;
 		double actual_compressed = 0.0;
 		boolean valid_transaction = false;
 		wrong_currency = false;
@@ -495,7 +480,7 @@ public class StonkBarrel extends Barrel {
 	    
 		generateGuiText();
 		
-	    if(other_items == 0 && currency_delta == 0 && !wrong_currency) {
+	    if(other_items == 0 && currency_delta == 0 && !wrong_currency && barrel_transactions.isEmpty()) {
 			return true;
 		}
 	    return false;

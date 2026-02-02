@@ -456,7 +456,7 @@ public class ClientPlayNetworkMixin {
 						StonkCompanionClient.barrel_prices.put(barrel_pos, new StonkBarrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
 					}
 					
-					StonkCompanionClient.LOGGER.info(StonkCompanionClient.barrel_prices.get(barrel_pos).toString());
+					if(StonkCompanionClient.is_verbose_logging) StonkCompanionClient.LOGGER.info(StonkCompanionClient.barrel_prices.get(barrel_pos).toString());
 					
 				}else {
 					/*Barrel open_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
