@@ -955,11 +955,23 @@ public class StonkCompanionClient implements ClientModInitializer{
 			
 			// Every tick increase the lifetime of every barrel and then check if it has exceeded it's lifetime.
 			for (String pos : barrel_prices.keySet()) {
-				barrel_prices.get(pos).increment_time();
-				barrel_prices.get(pos).updateGuiTimestamp();
+				
+				if(barrel_prices.get(pos).barrel_transactions.isEmpty()) {
+					continue;
+				}
+				
+				barrel_prices.get(pos).incrementTime();
+				
+				// Only update timestamp gui if there is a barrel open and it is the barrel we are looking at.
+				if(!anti_monu_is_not_barrel && pos.equals(barrel_pos_found)) {
+					if(barrel_prices.get(pos).isTimeOver()) {
+						barrel_prices.get(pos).clearBarrelTransactions();
+					}
+					barrel_prices.get(pos).updateGuiTimestamp();
+				}
 			}
 			
-			barrel_prices.entrySet().removeIf(entry -> (entry.getValue().is_time_over()));
+			barrel_prices.entrySet().removeIf(entry -> (entry.getValue().isTimeOver()));
 			
 		});
 		

@@ -153,6 +153,8 @@ public class HandledScreenMixin {
 			sendFairPriceMessage(list_of_items);
 		}
 		
+		StonkCompanionClient.anti_monu_is_not_barrel = true;
+		
 	}
 	
 	private void handlingMistradesClose(List<Slot> items) {
@@ -162,104 +164,22 @@ public class HandledScreenMixin {
 		int barrelz = StonkCompanionClient.last_right_click.getZ();	
 		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
 		
-		/*if(!StonkCompanionClient.barrel_transactions.containsKey(barrel_pos)) {
-			StonkCompanionClient.barrel_transactions.remove(barrel_pos);
-			return;
-		};*/
-				
-		int currency_type = -1;
-		String label = "";
-		String ask_price = "";
-		String bid_price = "";
-		double ask_price_compressed = -1;
-		double bid_price_compressed = -1;
-		
-		// Assumed it is a barrel or chest so check 27 slots. First pass is to check for sign.
-		for(int i = 0; i < 27; i++) {
-			
-			if(!items.get(i).hasStack()) continue;
-			
-			ItemStack item = items.get(i).getStack();
-			
-			String item_name = "";
-			
-			if(item.getNbt() == null) {
-				continue;
-			}
-			
-			
-			if(!item.getNbt().contains("Monumenta")) {
-				item_name = item.getItem().getTranslationKey().substring(item.getItem().getTranslationKey().lastIndexOf('.')+1);
-				
-				if(item_name.toLowerCase().endsWith("sign")) {
-					// Okay we have a sign. Now to look to see if it has buy sell on it.
-					if (!item.getNbt().contains("plain") || !item.getNbt().getCompound("plain").contains("display") || !item.getNbt().getCompound("plain").getCompound("display").contains("Lore")) {
-						continue;
-					}
-					
-					NbtList sign_info = item.getNbt().getCompound("plain").getCompound("display").getList("Lore", NbtElement.STRING_TYPE);
-					
-					if(sign_info.size() > 2 && sign_info.get(1) != null) {					
-						label = sign_info.get(1).asString().replace(">", "").trim();
-					}
-					
-					for(NbtElement _e : sign_info) {
-						
-						String _sign_line = _e.asString().toLowerCase();
-						
-						int find_ask = _sign_line.indexOf("buy for");
-						int find_bid = _sign_line.indexOf("sell for");
-						
-						if (find_ask != -1) {
-							
-							ask_price = _sign_line.substring(find_ask).trim();
-							
-							// We now have the line of text with the buy price.
-							currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
-							
-							ask_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_ask+7));
-							
-						}else if(find_bid != -1) {
-							
-							bid_price = _sign_line.substring(find_bid).trim();
-							
-							// We now have the line of text with the sell price.
-							currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
-							bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_bid+8));
-						}
-					}
-					
-					// Break if we have found the sign. Assuming the first found correctly formatted sign is the correct sign. If it isn't. User error.
-					if (currency_type != -1 && ask_price_compressed != -1 && bid_price_compressed != -1) {
-						break;
-					}
-				}
-			}
-		}
-		
-		// StonkCompanionClient.LOGGER.info("Checked Barrel: " + currency_type + " " + ask_price_compressed + " " + bid_price_compressed);
-		
-		if (currency_type == -1 || ask_price_compressed == -1 || bid_price_compressed == -1) {
-			return;
-		}
-		
-		Barrel closing_barrel = null;
-		
 		// Current assumption. Barrel doesn't change.
 		if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
-			StonkCompanionClient.LOGGER.error("Created barrel on close at " + barrel_pos + ". This should not happen.");
-			closing_barrel = StonkCompanionClient.barrel_prices.put(barrel_pos, new StonkBarrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
-		}else {
-			closing_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+			
+			return;			
+			// StonkCompanionClient.LOGGER.error("Created barrel on close at " + barrel_pos + ". This should not happen.");
 		}
 		
 		MinecraftClient mc = MinecraftClient.getInstance();
+		
+		Barrel closing_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
 		
 		boolean remove_barrel = closing_barrel.validateTransaction();
 		
 	    if(!closing_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal("[StonkCompanion] Mistrade detected in " + closing_barrel.label));
 		
-	    if(!closing_barrel.mistrade_text_message.isBlank()) mc.player.sendMessage(Text.literal(closing_barrel.mistrade_text_message));
+	    if(StonkCompanionClient.is_showing_text && !closing_barrel.mistrade_text_message.isBlank()) mc.player.sendMessage(Text.literal(closing_barrel.mistrade_text_message));
 		
 		if(remove_barrel) {
 			StonkCompanionClient.barrel_prices.remove(barrel_pos);
@@ -268,6 +188,27 @@ public class HandledScreenMixin {
 	
 	private void sendFairPriceMessage(List<Slot> items) {
 		
+		int barrelx = StonkCompanionClient.last_right_click.getX();
+		int barrely = StonkCompanionClient.last_right_click.getY();
+		int barrelz = StonkCompanionClient.last_right_click.getZ();	
+		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
+		
+		// Current assumption. Barrel doesn't change.
+		if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
+			
+			return;			
+			// StonkCompanionClient.LOGGER.error("Created barrel on close at " + barrel_pos + ". This should not happen.");
+		}
+		
+		MinecraftClient mc = MinecraftClient.getInstance();
+		
+		Barrel closing_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+		
+		closing_barrel.calulateFairPrice(items);
+		
+	    if(StonkCompanionClient.is_showing_text && !closing_barrel.fairprice_text_message.isBlank()) mc.player.sendMessage(Text.literal(closing_barrel.fairprice_text_message));
+	    
+	    /*
 		String[] fair_price_results = StonkCompanionClient.detectFairPrice(items);
 		if (fair_price_results == null) return;
 		double interpolated_price = Double.parseDouble(fair_price_results[0]);
@@ -292,7 +233,6 @@ public class HandledScreenMixin {
 		       	currency_two = "har";
 		    }
 
-		    MinecraftClient mc = MinecraftClient.getInstance();
 		    String fairprice_msg = String.format(
 		    	"[StonkCompanion] %s's FairStonk is:\n1 %s -> %s %s\n1 %s -> %s %s", 
 		    	StonkCompanionClient.categoreyMaker(label), 
@@ -333,7 +273,6 @@ public class HandledScreenMixin {
 			double interpolated_compressed_amount = (Math.abs(interpolated_price)%64);	    
 		    
 		    // TODO: Add label
-		    MinecraftClient mc = MinecraftClient.getInstance();
 		    String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(interpolated_price), currency_str, interpolated_hyper_amount, hyper_str, StonkCompanionClient.df1.format(interpolated_compressed_amount), currency_str);
 		    
 		    if(StonkCompanionClient.is_showing_text) {
@@ -346,6 +285,7 @@ public class HandledScreenMixin {
 		        mc.player.sendMessage(Text.literal(fairprice_msg));
 		    }
 	    }
+	    */
 	}
 
 		

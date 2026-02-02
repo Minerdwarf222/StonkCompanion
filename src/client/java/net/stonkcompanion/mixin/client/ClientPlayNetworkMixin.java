@@ -28,6 +28,7 @@ import net.minecraft.screen.slot.Slot;
 import net.stonkcompanion.main.StonkCompanionClient;
 import net.stonkcompanion.main.Barrel;
 import net.stonkcompanion.main.Barrel.BarrelTypes;
+import net.stonkcompanion.main.ForexBarrel;
 import net.stonkcompanion.main.StonkBarrel;
 
 @Environment(EnvType.CLIENT)
@@ -303,10 +304,12 @@ public class ClientPlayNetworkMixin {
 					
 			int currency_type = -1;
 			String label = "";
+			// First line in a barrel. For stonk that is ask, for Forex that is curr 1
 			String ask_price = "";
 			String bid_price = "";
 			double ask_price_compressed = -1;
 			double bid_price_compressed = -1;
+			boolean is_forex = false;
 			
 			// Assumed it is a barrel or chest so check 27 slots. First pass is to check for sign.
 			for(int i = 0; i < 27; i++) {
@@ -327,39 +330,101 @@ public class ClientPlayNetworkMixin {
 					
 					if(item_name.toLowerCase().endsWith("sign")) {
 						// Okay we have a sign. Now to look to see if it has buy sell on it.
-						if (!item.getNbt().contains("plain") || !item.getNbt().getCompound("plain").contains("display") || !item.getNbt().getCompound("plain").getCompound("display").contains("Lore")) {
+						if (!item.getNbt().contains("BlockEntityTag") || !item.getNbt().getCompound("BlockEntityTag").contains("back_text") || !item.getNbt().getCompound("BlockEntityTag").getCompound("back_text").contains("messages")) {
+							continue;
+						}
+						if (!item.getNbt().contains("BlockEntityTag") || !item.getNbt().getCompound("BlockEntityTag").contains("front_text") || !item.getNbt().getCompound("BlockEntityTag").getCompound("front_text").contains("messages")) {
 							continue;
 						}
 						
-						NbtList sign_info = item.getNbt().getCompound("plain").getCompound("display").getList("Lore", NbtElement.STRING_TYPE);
+						NbtList sign_info = item.getNbt().getCompound("BlockEntityTag").getCompound("front_text").getList("messages", NbtElement.STRING_TYPE);
 						
-						if(sign_info.size() > 2 && sign_info.get(1) != null) {					
-							label = sign_info.get(1).asString().replace(">", "").trim();
+						if(sign_info.size() > 2 && sign_info.get(0) != null) {				
+							if(sign_info.get(0).asString().contains("\"text\"")) {
+								label = sign_info.get(0).asString().replace("{\"text\":\"", "").replace("\"}", "").trim();
+							}else {
+								label = sign_info.get(0).asString().replace("\"", "").trim();
+							}
 						}
 						
 						for(NbtElement _e : sign_info) {
 							
 							String _sign_line = _e.asString().toLowerCase();
 							
+							if(_sign_line.contains("\"text\"")) {
+								_sign_line = _sign_line.replace("{\"text\":\"", "").replace("\"}", "").trim();
+							}else {
+								_sign_line = _sign_line.replace("\"", "").trim();
+							}	
+							
 							int find_ask = _sign_line.indexOf("buy for");
 							int find_bid = _sign_line.indexOf("sell for");
+							int find_forex = _sign_line.indexOf("currency");
+							int find_arrow = _sign_line.indexOf("→");
 							
-							if (find_ask != -1) {
-								
-								ask_price = _sign_line.substring(find_ask).trim();
-								
-								// We now have the line of text with the buy price.
-								currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
-								
-								ask_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_ask+7));
-								
-							}else if(find_bid != -1) {
-								
-								bid_price = _sign_line.substring(find_bid).trim();
-								
-								// We now have the line of text with the sell price.
-								currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
-								bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_bid+8));
+							if (find_forex != -1) {
+								// Out of a lack of desire to standardize arbitrary forex pairs of any type, I will define them as special cases.
+								// If we end up with many special cases, we can figure out a standard.
+								is_forex = true;
+
+								if (_sign_line.toLowerCase().contains("r1r2")) {
+									currency_type = 1;
+
+								} else if (_sign_line.toLowerCase().contains("r1r3")) {
+									currency_type = 2;
+
+								} else if (_sign_line.toLowerCase().contains("r2r3")) {
+									currency_type = 3;
+
+								} else {
+									// sign has the word currency but not a recognized pair. Error.
+									continue;
+								}
+
+							}
+
+							if (is_forex) {
+								if (find_arrow != -1) {
+									String left_side = _sign_line.substring(0,find_arrow);
+									String right_side = _sign_line.substring(find_arrow+1);
+
+									int left_side_currency = StonkCompanionClient.getCurrencyType(left_side.trim());
+									int right_side_currency = StonkCompanionClient.getCurrencyType(right_side);
+									
+									// LOGGER.info(_sign_line);
+									// LOGGER.info(left_side_currency + " " + right_side_currency);
+
+									if (left_side_currency < right_side_currency) {
+										// This is the one_to_two value
+										ask_price = _sign_line.trim();
+										ask_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_arrow+2)); // +1 skips arrow, +2 skips space
+
+									} else {
+										// This is the two_to_one value
+										bid_price = _sign_line.trim();
+										bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_arrow+2)); // +1 skips arrow, +2 skips space
+									}
+								}
+
+							} else {
+
+								if (find_ask != -1) {
+									
+									ask_price = _sign_line.substring(find_ask).trim();
+									
+									// We now have the line of text with the buy price.
+									currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
+									
+									ask_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_ask+7));
+									
+								} else if(find_bid != -1) {
+									
+									bid_price = _sign_line.substring(find_bid).trim();
+									
+									// We now have the line of text with the sell price.
+									currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
+									bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_bid+8));
+								}
 							}
 						}
 						
@@ -374,13 +439,41 @@ public class ClientPlayNetworkMixin {
 			// StonkCompanionClient.LOGGER.info("Checked Barrel: " + currency_type + " " + ask_price_compressed + " " + bid_price_compressed);
 			
 			if (currency_type == -1 || ask_price_compressed == -1 || bid_price_compressed == -1) {
-
+				/*
+				 *     rat        _..----.._    _
+            	 * 				.'  .--.    "-.(0)_
+				 * '-.__.-'"'=:|   ,  _)_ \__ . c\'-..
+             	 *    			'''------'---''---'-"
+				 */
 			}else {	
 				// Current assumption. Barrel doesn't change.
 				if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
 					
 					// StonkCompanionClient.LOGGER.info("Created barrel at " + barrel_pos);
-					StonkCompanionClient.barrel_prices.put(barrel_pos, new StonkBarrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+					if(is_forex) {
+						StonkCompanionClient.barrel_prices.put(barrel_pos, new ForexBarrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+					}else {
+						StonkCompanionClient.barrel_prices.put(barrel_pos, new StonkBarrel(label, barrel_pos, ask_price, bid_price, ask_price_compressed, bid_price_compressed, currency_type));
+					}
+					
+					StonkCompanionClient.LOGGER.info(StonkCompanionClient.barrel_prices.get(barrel_pos).toString());
+					
+				}else {
+					/*Barrel open_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+					switch(open_barrel.barrel_type) {
+					case STONK:
+						StonkBarrel closing_stonk_barrel = (StonkBarrel) open_barrel;
+						if(closing_stonk_barrel.compressed_ask_price != ask_price_compressed || closing_stonk_barrel.compressed_bid_price != bid_price_compressed) {
+								
+							closing_stonk_barrel.ask_price = ask_price;
+							closing_stonk_barrel.bid_price = bid_price;
+							closing_stonk_barrel.compressed_ask_price = ask_price_compressed;
+							closing_stonk_barrel.compressed_bid_price = bid_price_compressed;
+						}
+						break;
+					default:
+						break;
+					}*/
 				}
 				
 				if(StonkCompanionClient.fairprice_detection) {
@@ -388,8 +481,6 @@ public class ClientPlayNetworkMixin {
 				}else {
 					StonkCompanionClient.barrel_prices.get(barrel_pos).generateGuiText();
 				}
-				
-				StonkCompanionClient.LOGGER.info(StonkCompanionClient.barrel_prices.get(barrel_pos).toString());
 				
 				StonkCompanionClient.barrel_pos_found = barrel_pos;
 				// StonkCompanionClient.is_there_barrel_price = true;

@@ -1,9 +1,6 @@
 package net.stonkcompanion.main;
 
 import java.awt.Rectangle;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +14,6 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.stonkcompanion.mixin.client.HandledScreenAccessor;
 
 public class TransactionWidget extends AbstractParentElement implements Drawable, Selectable, Element{
@@ -31,7 +27,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
     private final Screen parent;
     
     private final int background_rect_width = 165;
-    private final int background_rect_height = 190;
+    private int background_rect_height = 190;
 	
     public void init() {
     	clear();
@@ -71,6 +67,8 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		
 		if(given_barrel == null) return;
 		if(given_barrel.gui_text == null) return;
+		
+		background_rect_height = given_barrel.gui_height;
 		
 		Rectangle dimension = getDimension();
 		

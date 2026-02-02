@@ -1,8 +1,12 @@
 package net.stonkcompanion.main;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 
@@ -27,11 +31,14 @@ public class Barrel {
 	public String fairprice_text_message = "";
 	public String fairprice_gui_message = "";
 	public Text[][] gui_text = null;
+	public int gui_height = -1;
 	
 	public String previous_action_name_take = "";
 	public int previous_action_qty_take = 0;
 	public String previous_action_name_put = "";
 	public int previous_action_qty_put = 0;
+	
+	private static final MinecraftClient client = MinecraftClient.getInstance();
 	
 	public BarrelTypes barrel_type = BarrelTypes.BASE;
 
@@ -40,17 +47,78 @@ public class Barrel {
 		this.coords = coords;
 	}
 	
-	public void increment_time() { time_since_last_movement++;}
-	public void reset_time() {time_since_last_movement = 0;}
-	public boolean is_time_over() {return time_since_last_movement >= transaction_lifetime;}
+	public void incrementTime() { time_since_last_movement++;}
+	public void resetTime() {time_since_last_movement = 0;}
+	public boolean isTimeOver() {return time_since_last_movement >= transaction_lifetime;}
+	
+	protected void calcuateGuiHeight() {
+		if (gui_text == null) {
+			gui_height = -1;
+			return;
+		}
+		
+		gui_height = 6 + client.textRenderer.fontHeight;
+		
+		for(Text[] given_text_segment : gui_text) {
+			if(given_text_segment == null) continue;
+			boolean printed_line = false;
+			for(Text given_text : given_text_segment) {
+				if(given_text == null) continue;
+				if(!printed_line) {
+					
+					gui_height += 2 + 1;
+					printed_line = true;
+				}
+				
+				gui_height += client.textRenderer.fontHeight + 1;
+			}
+		}
+		
+		gui_height += 2 + 1;
+		
+	}
 	
 	// For subclass usages. Since subclasses should override these if they have them, and all of them should have these 4 functions just different implementations.
 	public boolean validateTransaction() {return true;}
 	public void generateGuiText() {}
-	public void updateGuiTimestamp() {}
 	public void calulateFairPrice(List<Slot> items) {}
 	public void onClickActionAdd(String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {}
 	public void convertSolutionToCompressed() {}
+	
+	public void clearBarrelTransactions() {
+		resetTime();
+		barrel_actions = new double[] {0.0, 0.0};
+		barrel_transactions = new HashMap<>();
+		barrel_transaction_validity = true;
+		barrel_transaction_solution = "";
+		mistrade_text_message = "";
+		fairprice_text_message = "";
+		fairprice_gui_message = "";
+		generateGuiText();
+	}
+	
+	public void updateGuiTimestamp(){
+		
+		if(gui_text == null) return;
+		if(barrel_transactions.isEmpty()) {
+			if(gui_text[2] != null) gui_text[2] = null;
+			return;
+		}
+		if(gui_text[2] == null) return;
+		
+		int time_left = -1;
+
+		time_left = (int)((Barrel.transaction_lifetime - time_since_last_movement)/20);
+			
+		if (time_left != -1) {
+			int seconds_since_last_interaction = (int)time_since_last_movement/20;
+			ZonedDateTime current_time = ZonedDateTime.now().minusSeconds(seconds_since_last_interaction);	
+
+			gui_text[2][0] = Text.literal("Last Interaction: %s".formatted(current_time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))));
+			
+			gui_text[2][1] = Text.literal("Refund period ends in: %d:%02d".formatted((int)time_left/60, time_left%60));
+		}
+	}
 	
 	public String toString() {
 		return "Label: " + label + " Coords: " + coords + " time: " + time_since_last_movement;

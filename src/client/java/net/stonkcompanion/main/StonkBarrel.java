@@ -22,6 +22,8 @@ public class StonkBarrel extends Barrel {
 	public double compressed_ask_price = 0.0;
 	public double compressed_bid_price = 0.0;
 	public int currency_type = -1;
+	public String barrel_transaction_solution_mats = "";
+	public boolean wrong_currency = false;
 
 	public StonkBarrel(String label, String coords, String ask_price, String bid_price, double compressed_ask_price,
 			double compressed_bid_price, int currency_type) {
@@ -53,15 +55,15 @@ public class StonkBarrel extends Barrel {
 
 	    if(currency_delta != 0) {
 	    	double abs_currency_delta = Math.abs(currency_delta);
+	    	String correction_dir = currency_delta<0 ? "Take out" : "Put in";
 	    	// TODO: Turn this into an array of two strings.
 	    	if(StonkCompanionClient.is_compressed_only) {
-		    	barrel_transaction_solution = "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str);	
+		    	barrel_transaction_solution = "%s %s %s".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str);	
 	    	}else {
-		    	barrel_transaction_solution = "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str);
+		    	barrel_transaction_solution = "%s %d %s %s %s".formatted(correction_dir, (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str);
 	    	}
 	    }else {
 	    	barrel_transaction_solution = "";
-	    	barrel_transaction_validity = true;
 	    }
 	}
 	
@@ -118,7 +120,7 @@ public class StonkBarrel extends Barrel {
 		this.gui_text[2] = new Text[2];
 		
 		// This is mistrade portion.
-		this.gui_text[3] = new Text[4];
+		this.gui_text[3] = new Text[5];
 		
 		// This is just the tack on if error report do clear reports.
 		this.gui_text[4] = new Text[2];
@@ -183,14 +185,24 @@ public class StonkBarrel extends Barrel {
 			gui_text[3][0] = null;
 		}
 		//draw_context.drawTextWithShadow(client.textRenderer, StonkCompanionClient.barrel_transaction_validity.get(given_barrel.coords) ? "Valid" : "Mistrade Detected", dimension.x+left_indent, dimension.y+y_diff_text, light_blue_color);
-		if(!barrel_transaction_validity && !barrel_transaction_solution.isBlank()) {
-				
-			gui_text[3][1] = Text.literal("Suggested Fix:");
-			gui_text[3][2] = Text.literal(barrel_transaction_solution);
+		if(!barrel_transaction_validity) {
+			
+			if(!barrel_transaction_solution.isBlank()) {
+				gui_text[3][1] = Text.literal("Suggested Fix:");
+				gui_text[3][2] = Text.literal(barrel_transaction_solution);
+			}
+			if(!barrel_transaction_solution_mats.isBlank()) {
+				gui_text[3][3] = Text.literal(barrel_transaction_solution_mats);
+			}
+			if(wrong_currency) {
+				gui_text[3][4] = Text.literal("Wrong Currency").formatted(Formatting.BOLD).withColor(red_color);
+			}
 				
 		}else {
 			gui_text[3][1] = null;
 			gui_text[3][2] = null;
+			gui_text[3][3] = null;
+			gui_text[3][4] = null;
 		}
 			
 		if(!barrel_transaction_validity) {
@@ -200,29 +212,8 @@ public class StonkBarrel extends Barrel {
 			gui_text[4][0] = null;
 			gui_text[4][1] = null;
 		}
-	}
-	
-	public void updateGuiTimestamp(){
 		
-		if(gui_text == null) return;
-		if(barrel_transactions.isEmpty()) {
-			if(gui_text[2] != null) gui_text[2] = null;
-			return;
-		}
-		if(gui_text[2] == null) return;
-		
-		int time_left = -1;
-
-		time_left = (int)((Barrel.transaction_lifetime - time_since_last_movement)/20);
-			
-		if (time_left != -1) {
-			int seconds_since_last_interaction = (int)time_since_last_movement/20;
-			ZonedDateTime current_time = ZonedDateTime.now().minusSeconds(seconds_since_last_interaction);	
-
-			gui_text[2][0] = Text.literal("Last Interaction: %s".formatted(current_time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))));
-			
-			gui_text[2][1] = Text.literal("Refund period ends in: %d:%02d".formatted((int)time_left/60, time_left%60));
-		}
+		super.calcuateGuiHeight();
 	}
 	
 	public void calulateFairPrice(List<Slot> items) {
@@ -341,6 +332,8 @@ public class StonkBarrel extends Barrel {
 		if (barrel_transactions.isEmpty()) {
 			barrel_transaction_validity = true;
 			barrel_transaction_solution = "";
+			barrel_transaction_solution_mats = "";
+			mistrade_text_message = "";
 			generateGuiText();
 			return true;
 		}
@@ -362,23 +355,15 @@ public class StonkBarrel extends Barrel {
 				
 			String traded_item_lc = traded_item.toLowerCase();
 			
-			// EEEEEEE
-			if(traded_item_lc.equals("hyperexperience")) {
-				r1_compressed += 64*item_qty;
-			}else if(traded_item_lc.equals("concentrated experience")) {
-				r1_compressed += item_qty;
-			}else if(traded_item_lc.equals("experience bottle")) {
-				r1_compressed += item_qty/8.0;
-			}else if(traded_item_lc.equals("hyper crystalline shard")) {
-				r2_compressed += 64*item_qty;
-			}else if(traded_item_lc.equals("compressed crystalline shard")) {
-				r2_compressed += item_qty;
-			}else if(traded_item_lc.equals("crystalline shard")) {
-				r2_compressed += item_qty/8.0;
-			}else if(traded_item_lc.equals("hyperchromatic archos ring")) {
-				r3_compressed += 64*item_qty;
-			}else if(traded_item_lc.equals("archos ring")) {
-				r3_compressed += item_qty;
+			double mult = StonkCompanionClient.givenCurrReturnMult(traded_item_lc);
+			int item_curr = StonkCompanionClient.getCurrencyType(traded_item_lc);
+			
+			if(item_curr == 1) {
+				r1_compressed += mult*(double)(item_qty);
+			}else if(item_curr == 2) {
+				r2_compressed += mult*(double)(item_qty);
+			}else if(item_curr == 3) {
+				r3_compressed += mult*(double)(item_qty);
 			}else {
 				other_items += item_qty;
 			}
@@ -393,7 +378,7 @@ public class StonkBarrel extends Barrel {
 		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*compressed_ask_price : -1*other_items*compressed_bid_price;
 		double actual_compressed = 0.0;
 		boolean valid_transaction = false;
-		boolean wrong_currency = false;
+		wrong_currency = false;
 			
 		if(currency_type == 1) {
 			valid_transaction = r1_compressed == expected_compressed;
@@ -421,6 +406,8 @@ public class StonkBarrel extends Barrel {
 				wrong_currency = true;
 			}
 		}
+		
+		if (wrong_currency) valid_transaction = false;
 			
 		/*
 		 * Here is where hell resides. Pretty printing the mistrades.
@@ -446,12 +433,15 @@ public class StonkBarrel extends Barrel {
 	    // Funny check if can be fixed by adding / taking mats.
 	    int mats_delta = 0;
 	    
-	    if(other_items < 0) {
+	    // Either player bought mats or added currency and took no mats.
+	    // StonkCompanionClient.LOGGER.info(other_items + " " + currency_delta);
+	    if(other_items < 0 || (currency_delta < 0 && other_items == 0)) {
 	    	
 	    	// Player bought mats
 	    	mats_delta = (currency_delta % compressed_ask_price == 0) ? (int)(currency_delta / compressed_ask_price) : 0;		    	
-	    	
-	    }else if (other_items > 0) {
+	    
+	    // Either player sold mats or took currency and put in no mats.
+	    }else if (other_items > 0 || (currency_delta > 0 && other_items == 0)) {
 	    	
 	    	// Player sold mats
 	    	mats_delta = (currency_delta % compressed_bid_price == 0) ? (int)(currency_delta / compressed_bid_price) : 0;
@@ -473,8 +463,16 @@ public class StonkBarrel extends Barrel {
 			// TODO: Check for if compressed or not toggle.
 			convertSolutionToCompressed();
 			// barrel_transaction_solution = "Correction amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str, corrective_hyper_amount, hyper_str, StonkCompanionClient.df1.format(corrective_compressed_amount), currency_str);
+		
+			// Check if it can be resolved via mats.
+			if (mats_delta != 0) {
+				barrel_transaction_solution_mats = "(OR) %s %d mat%s".formatted(correction_dir, Math.abs(mats_delta), Math.abs(mats_delta) == 1 ? "" : "s");
+			}else {
+				barrel_transaction_solution_mats = "";
+			}
 		}else {
 			barrel_transaction_solution = "";
+			barrel_transaction_solution_mats = "";
 		}
 	    	
 		StringBuilder build_mistrade_text = new StringBuilder();
@@ -486,7 +484,7 @@ public class StonkBarrel extends Barrel {
 		build_mistrade_text.append("\n%s: %s".formatted((other_items < 0) ? "Bought" : "Sold", StonkCompanionClient.df1.format(Math.abs(other_items))));
 		build_mistrade_text.append("\n%s: %s %s (%d %s %s %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", StonkCompanionClient.df1.format(Math.abs(actual_compressed)), currency_str, actual_hyper_amount, hyper_str, StonkCompanionClient.df1.format(actual_compressed_amount), currency_str));
 		if(other_items!=0) build_mistrade_text.append("\nUnit Price: %s".formatted(StonkCompanionClient.df1.format(Math.abs(actual_compressed / (other_items)))));
-		if(currency_delta == 0) build_mistrade_text.append("Valid Transaction");
+		if(barrel_transaction_validity) build_mistrade_text.append("\nValid Transaction");
 		if(currency_delta != 0) build_mistrade_text.append("\nCorrection amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str, corrective_hyper_amount, hyper_str, StonkCompanionClient.df1.format(corrective_compressed_amount), currency_str));
 		if(mats_delta != 0) build_mistrade_text.append("\n(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta)));
 		build_mistrade_text.append("\nTime since last log: %ds/%ds".formatted(time_since_last_movement/20, transaction_lifetime/20));

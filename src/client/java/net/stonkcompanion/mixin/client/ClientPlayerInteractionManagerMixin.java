@@ -639,7 +639,7 @@ public class ClientPlayerInteractionManagerMixin {
 		
 		if(StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
 			Barrel active_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
-			active_barrel.time_since_last_movement = 0;
+			active_barrel.resetTime();
 			if(item_qty_put != 0) {
 				active_barrel.barrel_transactions.put(put_item_name, active_barrel.barrel_transactions.getOrDefault(put_item_name, 0) + item_qty_put);
 				if(active_barrel.barrel_transactions.get(put_item_name) == 0) active_barrel.barrel_transactions.remove(put_item_name);
