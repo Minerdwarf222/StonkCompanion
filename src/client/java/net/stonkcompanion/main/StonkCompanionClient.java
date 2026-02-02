@@ -15,13 +15,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.joml.Math;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -36,6 +36,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
@@ -45,7 +46,6 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
-import net.stonkcompanion.main.Barrel.BarrelTypes;
 import net.stonkcompanion.mixin.client.PlayerListHudAccessor;
 
 public class StonkCompanionClient implements ClientModInitializer{
@@ -1074,7 +1074,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}
 		});
 		
-	    ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(ClientCommandManager.literal("StonkCompanion")
+	    ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> { LiteralCommandNode<FabricClientCommandSource> stonk_companion_node = dispatcher.register(ClientCommandManager.literal("StonkCompanion")
 		.then(argument("command", StringArgumentType.string())
 				.suggests(StonkCompanionCommandsSuggestions.commandsSUGGESTION_PROVIDER)
 	    		.executes(context -> {
@@ -1163,7 +1163,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			}
 	    			return 1;
 	    		}
-	    	))));
+	    	)));
+	    	dispatcher.register(ClientCommandManager.literal("sc").redirect(stonk_companion_node));
+	    	});
 		
 	}
 
