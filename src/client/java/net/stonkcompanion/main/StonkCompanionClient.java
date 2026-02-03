@@ -60,8 +60,8 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private boolean change_coreprotect = true;
 	
 	// Bool
-	public static boolean is_verbose_logging = true;
-	public static boolean is_showing_text = true;
+	public static boolean is_verbose_logging = false;
+	public static boolean is_showing_text = false;
 	public static boolean is_showing_gui = true;
 	
 	public static final Map<Integer, String> currency_type_to_compressed_text = Map.of(1, "cxp", 2, "ccs", 3, "ar");
