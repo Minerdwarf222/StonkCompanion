@@ -150,11 +150,25 @@ public class StonkCompanionClient implements ClientModInitializer{
 		
 		String s = _s.toLowerCase().trim();
 		
-		if(s.endsWith("har") || s.endsWith("ar") || s.equals("hyperchromatic archos ring") || s.equals("archos ring")) {
+		if(s.endsWith("har") || s.endsWith("ar")) {
 			return 3;
-		}else if(s.endsWith("hcs") || s.endsWith("ccs") || s.endsWith("cs") || s.equals("hyper crystalline shard") || s.equals("compressed crystalline shard") || s.equals("crystalline shard")) {
+		}else if(s.endsWith("hcs") || s.endsWith("ccs") || s.endsWith("cs")) {
 			return 2;
-		}else if(s.endsWith("hxp") || s.endsWith("cxp") || s.endsWith("xp") || s.equals("hyperexperience") || s.equals("concentrated experience") || s.equals("experience bottle")) {
+		}else if(s.endsWith("hxp") || s.endsWith("cxp") || s.endsWith("xp")) {
+			return 1;
+		}else {
+			return 0;
+		}
+	}
+	
+	public static int getItemCurrencyType(String _s) {
+		String s = _s.toLowerCase().trim();
+		
+		if(s.equals("hyperchromatic archos ring") || s.equals("archos ring")) {
+			return 3;
+		}else if(s.equals("hyper crystalline shard") || s.equals("compressed crystalline shard") || s.equals("crystalline shard")) {
+			return 2;
+		}else if(s.equals("hyperexperience") || s.equals("concentrated experience") || s.equals("experience bottle")) {
 			return 1;
 		}else {
 			return 0;

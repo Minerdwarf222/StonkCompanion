@@ -67,7 +67,7 @@ public class ForexBarrel extends Barrel {
 		if(item_qty_taken != 0) {
 			String taken_item_name_lc = taken_item_name.toLowerCase();
 			
-			int item_currency_type = StonkCompanionClient.getCurrencyType(taken_item_name_lc);
+			int item_currency_type = StonkCompanionClient.getItemCurrencyType(taken_item_name_lc);
 			
 			if(curr_one_type == item_currency_type) {
 				barrel_actions[0] -= StonkCompanionClient.givenCurrReturnMult(taken_item_name_lc)*(double)(item_qty_taken);
@@ -79,7 +79,7 @@ public class ForexBarrel extends Barrel {
 		if(item_qty_put != 0) {
 			String put_item_name_lc = put_item_name.toLowerCase();
 			
-			int item_currency_type = StonkCompanionClient.getCurrencyType(put_item_name_lc);
+			int item_currency_type = StonkCompanionClient.getItemCurrencyType(put_item_name_lc);
 			
 			if(curr_one_type == item_currency_type) {
 				barrel_actions[0] += StonkCompanionClient.givenCurrReturnMult(put_item_name_lc)*(double)(item_qty_put);
@@ -236,7 +236,7 @@ public class ForexBarrel extends Barrel {
 		      
 		    double mult = StonkCompanionClient.givenCurrReturnMult(item_name);
 
-		    int item_currency = StonkCompanionClient.getCurrencyType(item_name);
+		    int item_currency = StonkCompanionClient.getItemCurrencyType(item_name);
 
 		    // If this is a forex barrel, we will assume that one_to_two is the ask and two_to_one is the bid.    
 		    if (item_currency == curr_one_type) {
@@ -347,7 +347,7 @@ public class ForexBarrel extends Barrel {
 			String traded_item_lc = traded_item.toLowerCase();
 			
 			double mult = StonkCompanionClient.givenCurrReturnMult(traded_item_lc);
-			int item_curr = StonkCompanionClient.getCurrencyType(traded_item_lc);
+			int item_curr = StonkCompanionClient.getItemCurrencyType(traded_item_lc);
 			
 			if(item_curr == 1) {
 				r1_compressed += mult*(double)(item_qty);

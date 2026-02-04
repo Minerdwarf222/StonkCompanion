@@ -82,7 +82,7 @@ public class StonkBarrel extends Barrel {
 		if(item_qty_taken != 0) {
 			String taken_item_name_lc = taken_item_name.toLowerCase();
 			
-			int item_currency_type = StonkCompanionClient.getCurrencyType(taken_item_name_lc);
+			int item_currency_type = StonkCompanionClient.getItemCurrencyType(taken_item_name_lc);
 			
 			if(currency_type == item_currency_type) {
 				barrel_actions[1] -= StonkCompanionClient.givenCurrReturnMult(taken_item_name_lc)*(double)(item_qty_taken);
@@ -98,7 +98,7 @@ public class StonkBarrel extends Barrel {
 		if(item_qty_put != 0) {
 			String put_item_name_lc = put_item_name.toLowerCase();
 			
-			int item_currency_type = StonkCompanionClient.getCurrencyType(put_item_name_lc);
+			int item_currency_type = StonkCompanionClient.getItemCurrencyType(put_item_name_lc);
 			
 			if(currency_type == item_currency_type) {
 				barrel_actions[1] += StonkCompanionClient.givenCurrReturnMult(put_item_name_lc)*(double)(item_qty_put);
@@ -337,16 +337,17 @@ public class StonkBarrel extends Barrel {
 		double r1_compressed = 0.0;
 		double r2_compressed = 0.0;
 		double r3_compressed = 0.0;
-		double other_items = 0;
+		double other_items = 0;		
 			
 		for (String traded_item : barrel_transactions.keySet()) {
-								
+			
+											
 			int item_qty = barrel_transactions.get(traded_item);
 				
 			String traded_item_lc = traded_item.toLowerCase();
 			
 			double mult = StonkCompanionClient.givenCurrReturnMult(traded_item_lc);
-			int item_curr = StonkCompanionClient.getCurrencyType(traded_item_lc);
+			int item_curr = StonkCompanionClient.getItemCurrencyType(traded_item_lc);
 			
 			if(item_curr == 1) {
 				r1_compressed += mult*(double)(item_qty);
@@ -493,6 +494,7 @@ public class StonkBarrel extends Barrel {
 	
 	public String toString() {
 		String start = super.toString();
+		
 		return start + " ask_str: " + ask_str + " bid_str: " + bid_str;
 	}
 
