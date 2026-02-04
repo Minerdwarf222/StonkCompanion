@@ -293,25 +293,30 @@ public class ForexBarrel extends Barrel {
 		    String fairprice_gui_msg_2 = "1 %s -> %s %s".formatted(currency_two, StonkCompanionClient.df1.format(1/interpolated_price), currency_one);
 		    	    
 		    fairprice_gui_message = fairprice_gui_msg_1 + "|" + fairprice_gui_msg_2;
+		    
+		    // Check for if there is not enough to actually do a trade.
+		    if(one_to_two > comp_curr_two) {
+		    	demand_modifier = 1;
+		    }else if (two_to_one > comp_curr_one) {
+		    	demand_modifier = 0;
+		    }
 
-		    if(StonkCompanionClient.is_showing_text) {
-		      if(demand_modifier <= 0.005) {
-		    	  if(curr_one_type == 2) {
-			    	fairprice_text_message = "[StonkCompanion] Look in lower barrel.";
-			    	fairprice_gui_message = "Look in lower barrel.";
-		    	  }else {
-				    fairprice_text_message = "[StonkCompanion] Look in higher barrel.";
-				    fairprice_gui_message = "Look in higher barrel.";
-		    	  }
-		      }else if(demand_modifier >= 0.995) {
-		    	  if(curr_one_type == 2) {
-			    	fairprice_text_message = "[StonkCompanion] Look in higher barrel.";
-			    	fairprice_gui_message = "Look in higher barrel.";
-		    	  }else {
-				    fairprice_text_message = "[StonkCompanion] Look in lower barrel.";
-				    fairprice_gui_message = "Look in lower barrel.";  
-		    	  }
-		      }
+		    if(demand_modifier <= 0.005) {
+		    	if(curr_one_type == 2) {
+		    		fairprice_text_message = "[StonkCompanion] Look in lower barrel.";
+		    		fairprice_gui_message = "Look in lower barrel.";
+		    	}else {
+		    		fairprice_text_message = "[StonkCompanion] Look in higher barrel.";
+		    		fairprice_gui_message = "Look in higher barrel.";
+		    	}
+		    }else if(demand_modifier >= 0.995) {
+		    	if(curr_one_type == 2) {
+		    		fairprice_text_message = "[StonkCompanion] Look in higher barrel.";
+		    		fairprice_gui_message = "Look in higher barrel.";
+		    	}else {
+		    		fairprice_text_message = "[StonkCompanion] Look in lower barrel.";
+		    		fairprice_gui_message = "Look in lower barrel.";  
+		    	}
 		    }
 		    generateGuiText();
 

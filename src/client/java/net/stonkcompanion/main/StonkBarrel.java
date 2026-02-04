@@ -299,6 +299,11 @@ public class StonkBarrel extends Barrel {
 		String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(interpolated_price), currency_str, interpolated_hyper_amount, hyper_str, StonkCompanionClient.df1.format(interpolated_compressed_amount), currency_str);
 		String fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(interpolated_price), currency_str);
 		
+		// Check for if there is not enough to actually do a trade.
+		if (barrel_compressed_currency < compressed_bid_price) {
+			demand_modifier = 0;
+		}
+		
 		if(demand_modifier <= 0.005) {
 			fairprice_msg = "[StonkCompanion] Look in lower barrel.";
 			fairprice_gui_msg = "Look in lower barrel.";
