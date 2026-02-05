@@ -22,6 +22,9 @@ public class Barrel {
 	
 	public String label = "";
 	public String coords = "";
+	public String category = "";
+	public int fairprice_dir = 0;
+	public int barrel_number = -1;
 	public int time_since_last_movement = 0;
 	public HashMap<String, Integer> barrel_transactions = new HashMap<>();
 	public double[] barrel_actions = new double[]{0.0, 0.0};
@@ -40,11 +43,59 @@ public class Barrel {
 	
 	private static final MinecraftClient client = MinecraftClient.getInstance();
 	
+	public static String previous_barrel_category = "";
+	public static int previous_barrel_number = -1;
+	public static int previous_barrel_fairprice = 0;
+	
+	public static String current_barrel_category = "";
+	public static int current_barrel_number = -1;
+	public static int current_barrel_fairprice = 0;
+	
 	public BarrelTypes barrel_type = BarrelTypes.BASE;
 
 	public Barrel (String label, String coords) {
-		this.label = label;
+		this.label = label.trim();
 		this.coords = coords;
+		splitLabel();
+	}
+	
+	private void splitLabel() {
+		// Gotta split the label into category and barrel_number.
+		// If barrel_number does not exist, then it is 0.
+		// Assumed barrels are of the form (category)( )(#)
+		// Category is assumed to either not end with a number or have a space between end of category and the number.
+		// "-" is considered a number for the start (In case negative stonks exist?)
+		
+		boolean found_number = false;
+		String gathering_number = "";
+
+		for(int i = label.length()-1; i >= 0; i--) {
+			
+			char _char = label.charAt(i);
+			
+			if('0' <= _char && _char <= '9') {
+				// It is number.
+				if (found_number) found_number = true;
+				gathering_number = _char + gathering_number;
+			} else if (found_number && _char == '-') {
+				gathering_number = "-" + gathering_number;
+			}else {
+				category = label.substring(0, i+1);
+				break;
+			}
+		}
+		
+		if(gathering_number.isBlank()) {
+			barrel_number = 0;
+		}else {
+			try {
+				barrel_number = Integer.parseInt(gathering_number);
+			} catch (Exception e){
+				StonkCompanionClient.LOGGER.error("Failed to parse number: \"" + gathering_number + "\" for " + coords);
+			}
+		}
+				
+		
 	}
 	
 	public void incrementTime() { time_since_last_movement++;}

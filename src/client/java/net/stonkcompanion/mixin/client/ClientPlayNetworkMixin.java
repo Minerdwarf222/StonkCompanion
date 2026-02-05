@@ -478,6 +478,22 @@ public class ClientPlayNetworkMixin {
 				
 				if(StonkCompanionClient.fairprice_detection) {
 					StonkCompanionClient.barrel_prices.get(barrel_pos).calulateFairPrice(list_of_slots);
+					
+					Barrel _barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
+					
+					if(!Barrel.current_barrel_category.equals(_barrel.category) || Barrel.current_barrel_number  != _barrel.barrel_number) {
+						Barrel.previous_barrel_category = Barrel.current_barrel_category;
+						Barrel.previous_barrel_number = Barrel.current_barrel_number;
+						Barrel.previous_barrel_fairprice = Barrel.current_barrel_fairprice;
+						
+						Barrel.current_barrel_category = _barrel.category;
+						Barrel.current_barrel_number = _barrel.barrel_number;
+						Barrel.current_barrel_fairprice = _barrel.fairprice_dir;
+						
+						StonkCompanionClient.barrel_prices.get(barrel_pos).calulateFairPrice(list_of_slots);
+					}				
+					
+					
 				}else {
 					StonkCompanionClient.barrel_prices.get(barrel_pos).generateGuiText();
 				}

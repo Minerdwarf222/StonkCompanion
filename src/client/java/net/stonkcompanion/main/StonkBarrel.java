@@ -304,13 +304,34 @@ public class StonkBarrel extends Barrel {
 			demand_modifier = 0;
 		}
 		
+		fairprice_dir = 0;
+		
 		if(demand_modifier <= 0.005) {
 			fairprice_msg = "[StonkCompanion] Look in lower barrel.";
 			fairprice_gui_msg = "Look in lower barrel.";
+			fairprice_dir = -1;
 		}else if(demand_modifier >= 0.995) {
 		   	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
 		   	fairprice_gui_msg = "Look in higher barrel.";
+		   	fairprice_dir = 1;
 		}		
+		
+		// Attempt to account for the situation where it is a split stonk.
+		// Barrel 1 has "Look in lower barrel." and Barrel 2 has "Look in higher barrel".
+		// Now if you opened 1 then opened 2, 2 will instead say the ask price. Vice versa the other way but with bid price.
+	
+		if(fairprice_dir != 0 && category.equals(previous_barrel_category)) {
+			if(fairprice_dir == 1 && previous_barrel_number == barrel_number-1 && previous_barrel_fairprice == -1) {
+				int ask_hyper_amount = (int)(Math.floor(Math.abs(compressed_ask_price)/64));
+				fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_ask_price), currency_str, ask_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_ask_price), currency_str);
+				fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(compressed_ask_price), currency_str);
+			}
+			if(fairprice_dir == -1 && previous_barrel_number == barrel_number+1 && previous_barrel_fairprice == 1) {
+				int bid_hyper_amount = (int)(Math.floor(Math.abs(compressed_bid_price)/64));
+				fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_bid_price), currency_str, bid_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_bid_price), currency_str);
+				fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(compressed_bid_price), currency_str);
+			}
+		}
 		
 		this.fairprice_text_message = fairprice_msg;
 		this.fairprice_gui_message = fairprice_gui_msg;

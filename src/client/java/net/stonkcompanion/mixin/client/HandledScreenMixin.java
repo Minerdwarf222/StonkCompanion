@@ -110,7 +110,9 @@ public class HandledScreenMixin {
 		
 	    if(!active_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal("[StonkCompanion] Mistrade detected in " + active_barrel.label));
 		
-	    if(StonkCompanionClient.is_showing_text && !active_barrel.mistrade_text_message.isBlank() && !active_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal(active_barrel.mistrade_text_message));
+	    if(StonkCompanionClient.is_showing_text && !active_barrel.mistrade_text_message.isBlank() && !active_barrel.barrel_transaction_validity) {
+	    	mc.player.sendMessage(Text.literal(active_barrel.mistrade_text_message));
+	    }
 		
 		if(remove_barrel) {
 			StonkCompanionClient.barrel_prices.remove(barrel_pos);

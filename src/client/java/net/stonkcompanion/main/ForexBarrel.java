@@ -300,22 +300,28 @@ public class ForexBarrel extends Barrel {
 		    }else if (two_to_one > comp_curr_one) {
 		    	demand_modifier = 0;
 		    }
+		    
+		    fairprice_dir = 0;
 
 		    if(demand_modifier <= 0.005) {
 		    	if(curr_one_type == 2) {
 		    		fairprice_text_message = "[StonkCompanion] Look in lower barrel.";
 		    		fairprice_gui_message = "Look in lower barrel.";
+		    		fairprice_dir = -1;
 		    	}else {
 		    		fairprice_text_message = "[StonkCompanion] Look in higher barrel.";
 		    		fairprice_gui_message = "Look in higher barrel.";
+		    		fairprice_dir = 1;
 		    	}
 		    }else if(demand_modifier >= 0.995) {
 		    	if(curr_one_type == 2) {
 		    		fairprice_text_message = "[StonkCompanion] Look in higher barrel.";
 		    		fairprice_gui_message = "Look in higher barrel.";
+		    		fairprice_dir= 1;
 		    	}else {
 		    		fairprice_text_message = "[StonkCompanion] Look in lower barrel.";
 		    		fairprice_gui_message = "Look in lower barrel.";  
+		    		fairprice_dir = -1;
 		    	}
 		    }
 		    generateGuiText();
