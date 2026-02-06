@@ -413,8 +413,8 @@ public class ForexBarrel extends Barrel {
 
 	    // TODO: Full hyper input checking and flagging if not.
 	    
-        if (currency_one >= 0) {
-            // currency_one was added, so currency_two's expected amount can be predicted from it
+        if (currency_one > 0 && currency_two <= 0) {
+            // currency_one was added, and currency_two has not been added so currency_two's expected amount can be predicted from it
         	if (currency_one % 64 != 0) {
         		// Currency_one was added, but not in a full hyper amount. Therefore this is a non-full hyper input mistrade.
         		// I guess add the difference till it reaches 64? So if 1 hcs 1 ccs then they owe +63 ccs?
@@ -433,10 +433,10 @@ public class ForexBarrel extends Barrel {
             currency_corrective_str = currency_two_str;
             hyper_corrective_str = hyper_two_str;
 
-        } else {
-            // currency_one was taken, so currency_one's expected amount can be predicted from it
+        } else if (currency_two > 0 && currency_one <= 0){
+            // currency_two was added, currency_one was taken, so currency_one's expected amount can be predicted from it
         	
-        	if (currency_two > 0 && currency_two % 64 != 0) {
+        	if (currency_two % 64 != 0) {
         		full_hyper_owed = currency_two%64;
         		expected_compressed = -1.0*((currency_two+full_hyper_owed)/64)*two_to_one;
         		
@@ -451,6 +451,46 @@ public class ForexBarrel extends Barrel {
             
             currency_corrective_str = currency_one_str;
             hyper_corrective_str = hyper_one_str;
+        }else if (currency_two > 0 && currency_one > 0){
+        	// Here. Both were added. Split from next case, just in case we decide to specially deal with this.
+        	
+        	expected_compressed = -1.0*currency_one;
+            currency_corrective_str = currency_one_str;
+            hyper_corrective_str = hyper_one_str;
+            
+            full_hyper_owed = -1.0*currency_two;
+            currency_full_str = currency_two_str;
+            hyper_full_str = hyper_two_str;        	        	
+        	
+        }else if (currency_two < 0 && currency_one < 0){
+        	// Here. Both were taken.
+        	
+        	expected_compressed = -1.0*currency_one;
+            currency_corrective_str = currency_one_str;
+            hyper_corrective_str = hyper_one_str;
+            
+            full_hyper_owed = -1.0*currency_two;
+            currency_full_str = currency_two_str;
+            hyper_full_str = hyper_two_str; 
+        	
+        }else {
+        	// Here either only one was taken or neither touched.
+        	
+        	if(currency_one < 0 && currency_two == 0) {
+        		
+        		expected_compressed = -1.0 * currency_one;
+        		
+                currency_corrective_str = currency_one_str;
+                hyper_corrective_str = hyper_one_str;
+        		        		
+        	}else if(currency_one == 0 && currency_two < 0) {
+        		expected_compressed = -1.0 * currency_two;
+        		
+                currency_corrective_str = currency_two_str;
+                hyper_corrective_str = hyper_two_str;
+                
+        	}
+        	
         }
         // TODO: Pretty printing
         
@@ -463,12 +503,13 @@ public class ForexBarrel extends Barrel {
 	    
 		if (!valid_transaction) {
 			// TODO: Check for if compressed or not toggle.
-			if(currency_delta != 0) convertSolutionToCompressed(currency_delta, currency_corrective_str, hyper_corrective_str);
-			if(full_hyper_owed != 0) barrel_transaction_full_hyper_solution = "%s 0 %s %s %s".formatted("Put in", hyper_full_str, StonkCompanionClient.df1.format(full_hyper_owed), currency_full_str);
+			if(currency_delta != 0) barrel_transaction_solution = convertSolutionToCompressed(currency_delta, currency_corrective_str, hyper_corrective_str);
+			if(full_hyper_owed != 0) barrel_transaction_full_hyper_solution = convertSolutionToCompressed(full_hyper_owed, currency_full_str, hyper_full_str);
 			// barrel_transaction_solution = "Correction amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str, corrective_hyper_amount, hyper_str, StonkCompanionClient.df1.format(corrective_compressed_amount), currency_str);
 
 		}else {
 			barrel_transaction_solution = "";
+			barrel_transaction_full_hyper_solution = "";
 		}
 		
 		StringBuilder build_mistrade_text = new StringBuilder();
@@ -485,7 +526,7 @@ public class ForexBarrel extends Barrel {
 		build_mistrade_text.append("\n%s: %s %s (%d %s %s %s)".formatted((currency_one < 0) ? "Took" : "Paid", StonkCompanionClient.df1.format(Math.abs(currency_one)), currency_one_str, (int)(Math.floor(Math.abs(currency_one)/64)), hyper_one_str, Math.abs(currency_one)%64, currency_one_str));
 		build_mistrade_text.append("\n%s: %s %s (%d %s %s %s)".formatted((currency_two < 0) ? "Took" : "Paid", StonkCompanionClient.df1.format(Math.abs(currency_two)), currency_two_str, (int)(Math.floor(Math.abs(currency_two)/64)), hyper_two_str, Math.abs(currency_two)%64, currency_two_str));
 		if(barrel_transaction_validity) build_mistrade_text.append("\nValid Transaction");
-		if(full_hyper_owed != 0) build_mistrade_text.append("\nCorrection amount: %s 0 %s %s %s".formatted("Put in", hyper_full_str, StonkCompanionClient.df1.format(full_hyper_owed), currency_full_str));
+		if(full_hyper_owed != 0) build_mistrade_text.append("\nCorrection amount: %s %s %s (%d %s %s %s)".formatted((full_hyper_owed < 0) ? "Take out" : "Put in", StonkCompanionClient.df1.format(Math.abs(full_hyper_owed)), currency_corrective_str, (int)(Math.floor(Math.abs(full_hyper_owed)/64)), hyper_corrective_str, StonkCompanionClient.df1.format((Math.abs(full_hyper_owed)%64)), currency_corrective_str));
 		if(currency_delta != 0) build_mistrade_text.append("\nCorrection amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_corrective_str, corrective_hyper_amount, hyper_corrective_str, StonkCompanionClient.df1.format(corrective_compressed_amount), currency_corrective_str));
 		build_mistrade_text.append("\nTime since last log: %ds/%ds".formatted(time_since_last_movement/20, transaction_lifetime/20));
 		if(wrong_currency) build_mistrade_text.append("\nWrong currency was used!");
@@ -502,20 +543,24 @@ public class ForexBarrel extends Barrel {
 		return false;
 	}
 	
-	public void convertSolutionToCompressed(double currency_delta, String currency_str, String hyper_str) {
+	public String convertSolutionToCompressed(double currency_delta, String currency_str, String hyper_str) {
 
+		String _gui_corrective_string = "";
+		
 	    if(currency_delta != 0) {
 	    	double abs_currency_delta = Math.abs(currency_delta);
 	    	String correction_dir = currency_delta<0 ? "Take out" : "Put in";
 	    	// TODO: Turn this into an array of two strings.
 	    	if(StonkCompanionClient.is_compressed_only) {
-		    	barrel_transaction_solution = "%s %s %s".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str);	
+	    		_gui_corrective_string = "%s %s %s".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str);	
 	    	}else {
-		    	barrel_transaction_solution = "%s %d %s %s %s".formatted(correction_dir, (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str);
+	    		_gui_corrective_string = "%s %d %s %s %s".formatted(correction_dir, (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str);
 	    	}
 	    }else {
-	    	barrel_transaction_solution = "";
+	    	_gui_corrective_string = "";
 	    }
+	    
+	    return _gui_corrective_string;
 	}
 	
 	public String toString() {
