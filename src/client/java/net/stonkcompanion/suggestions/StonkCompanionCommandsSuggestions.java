@@ -17,37 +17,37 @@ public class StonkCompanionCommandsSuggestions {
 			SuggestionsBuilder builder) throws CommandSyntaxException {
 		
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglecoreprotect")) {
-			builder.suggest("ToggleCoreprotect");
+			builder.suggest("togglecoreprotect");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglecheckpointing")) {
-			builder.suggest("ToggleCheckpointing");
+			builder.suggest("togglecheckpointing");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglefairprice")) {
-			builder.suggest("ToggleFairPrice");
+			builder.suggest("togglefairprice");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglemistradecheck")) {
-			builder.suggest("ToggleMistradeCheck");
+			builder.suggest("togglemistradecheck");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"mistradecheck")) {
-			builder.suggest("MistradeCheck"); 
+			builder.suggest("mistradecheck"); 
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"toggleverboselogging")) {
-			builder.suggest("ToggleVerboseLogging");
+			builder.suggest("toggleverboselogging");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"clearreports")) {
-			builder.suggest("ClearReports");
+			builder.suggest("clearreports");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglecompressed")) {
-			builder.suggest("ToggleCompressed");
+			builder.suggest("togglecompressed");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"toggleshowingtext")) {
-			builder.suggest("ToggleShowingText");
+			builder.suggest("toggleshowingtext");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"toggleshowinggui")) {
-			builder.suggest("ToggleShowingGui");
+			builder.suggest("toggleshowinggui");
 		}
 		if(CommandSource.shouldSuggest(builder.getRemainingLowerCase(),"togglehavingoffhandswapon")) {
-			builder.suggest("ToggleHavingOffhandSwapOn");
+			builder.suggest("togglehavingoffhandswapon");
 		}
 		
 		return builder.buildFuture();
