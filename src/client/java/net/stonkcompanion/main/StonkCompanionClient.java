@@ -57,12 +57,15 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private static String top_dir = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion").toString();
 	
 	// Coreprotect changes. Like changing the hovertext literal to the monu item name.
-	private boolean change_coreprotect = true;
+	public static boolean change_coreprotect = true;
 	
 	// Bool
-	public static boolean is_verbose_logging = false;
+	public static boolean is_verbose_logging = true;
 	public static boolean is_showing_text = false;
 	public static boolean is_showing_gui = true;
+	public static boolean fairprice_detection = true;
+	public static boolean is_mistrade_checking = true;
+	public static boolean has_offhandswap_off = false;
 	
 	public static final Map<Integer, String> currency_type_to_compressed_text = Map.of(1, "cxp", 2, "ccs", 3, "ar");
 	public static final Map<Integer, String> currency_type_to_hyper_text = Map.of(1, "hxp", 2, "hcs", 3, "har");
@@ -91,7 +94,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static JsonObject checkpoints = new JsonObject();
 	
 	// I need to find a better way to do this. Oh well
-	public static boolean fairprice_detection = true;
 	public static boolean did_screen_resize = false;
 	public static double fairprice_val = 0.0;
 	public static String fairprice_currency_str = "";
@@ -103,7 +105,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
 	
 	// Mistrade checking :fire:
-	public static boolean is_mistrade_checking = true;
 	// public static HashMap<String, HashMap<String, Integer>> barrel_transactions = new HashMap<>();
 	// public static HashMap<String, Integer> barrel_timeout = new HashMap<>();
 	public static HashMap<String, Barrel> barrel_prices = new HashMap<>();
@@ -116,7 +117,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static String barrel_pos_found = "";
 	public static boolean is_compressed_only = false;
 	public static final DecimalFormat df1 = new DecimalFormat( "#.###" );
-	public static boolean has_offhandswap_off = false;
 	
 	public static HashMap<Integer, ItemStack> barrel_changes = new HashMap<>();
 	
@@ -517,7 +517,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}
 	}
 	
-	private void writeConfig() {
+	public static void writeConfig() {
 		
 		JsonObject config_stuff = new JsonObject();		
 		
@@ -528,6 +528,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		config_stuff.addProperty("is_showing_text", is_showing_text);
 		config_stuff.addProperty("is_showing_gui", is_showing_gui);
 		config_stuff.addProperty("offhand_swap", has_offhandswap_off);
+		config_stuff.addProperty("is_verbose_logging", is_verbose_logging);
 		
 		try (FileWriter writer = new FileWriter(top_dir+"/StonkCompanionConfig.json")){
 			Gson gson = new GsonBuilder().create();
@@ -570,6 +571,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 				
 				if(test_obj.has("offhand_swap")){
 					has_offhandswap_off = test_obj.get("offhand_swap").getAsBoolean();
+				}
+				
+				if(test_obj.has("is_verbose_logging")) {
+					is_verbose_logging = test_obj.get("is_verbose_logging").getAsBoolean();
 				}
 
 			} catch (IOException e) {

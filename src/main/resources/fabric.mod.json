@@ -17,6 +17,9 @@
 		],
 		"client": [
 			"net.stonkcompanion.main.StonkCompanionClient"
+		],
+		"modmenu": [
+			"net.stonkcompanion.modmenu.ModMenuIntegration"
 		]
 	},
 	"mixins": [
@@ -33,6 +36,7 @@
 		"fabric-api": "*"
 	},
 	"suggests": {
-		"another-mod": "*"
+    	"modmenu": ">=7.2.1",
+    	"cloth-config": ">=11.1.106"
 	}
 }

@@ -90,7 +90,7 @@ public class ClientPlayNetworkMixin {
 				
 				Barrel active_barrel = StonkCompanionClient.barrel_prices.get(StonkCompanionClient.barrel_pos_found);
 				
-				StonkCompanionClient.LOGGER.info("DESYNC DETECTED IN " + StonkCompanionClient.barrel_pos_found + ".");
+				StonkCompanionClient.LOGGER.error("DESYNC DETECTED IN " + StonkCompanionClient.barrel_pos_found + ".");
 				if(active_barrel.previous_action_qty_put != 0) StonkCompanionClient.LOGGER.info("Prev put: x" + active_barrel.previous_action_qty_put + " " + active_barrel.previous_action_name_put);
 				if(active_barrel.previous_action_qty_take != 0) StonkCompanionClient.LOGGER.info("Prev take: x" + active_barrel.previous_action_qty_take + " " + active_barrel.previous_action_name_take);
 				active_barrel.previous_action_qty_put = 0;
