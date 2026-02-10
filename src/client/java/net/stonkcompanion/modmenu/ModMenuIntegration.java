@@ -43,6 +43,13 @@ public class ModMenuIntegration implements ModMenuApi {
 					.build()
 					);
 			
+			general.addEntry(entry_builder.startBooleanToggle(Text.of("Change Coreprotect"), StonkCompanionClient.change_coreprotect)
+					.setDefaultValue(true)
+					.setTooltip(Text.of("Coreprotect logs have the monu items changed to their name."))
+					.setSaveConsumer(new_value -> StonkCompanionClient.change_coreprotect = new_value)
+					.build()
+					);
+			
 			general.addEntry(entry_builder.startBooleanToggle(Text.of("Compressed Only"), StonkCompanionClient.is_compressed_only)
 					.setDefaultValue(false)
 					.setTooltip(Text.of("Show some values in compressed only versus hyper and compressed."))

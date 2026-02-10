@@ -529,6 +529,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		config_stuff.addProperty("is_showing_gui", is_showing_gui);
 		config_stuff.addProperty("offhand_swap", has_offhandswap_off);
 		config_stuff.addProperty("is_verbose_logging", is_verbose_logging);
+		config_stuff.addProperty("change_coreprotect", change_coreprotect);
 		
 		try (FileWriter writer = new FileWriter(top_dir+"/StonkCompanionConfig.json")){
 			Gson gson = new GsonBuilder().create();
@@ -575,6 +576,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 				
 				if(test_obj.has("is_verbose_logging")) {
 					is_verbose_logging = test_obj.get("is_verbose_logging").getAsBoolean();
+				}
+				
+				if(test_obj.has("change_coreprotect")) {
+					change_coreprotect = test_obj.get("change_coreprotect").getAsBoolean();
 				}
 
 			} catch (IOException e) {
