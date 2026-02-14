@@ -1,28 +1,37 @@
 package net.stonkcompanion.mixin.client;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
-import org.joml.Math;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.stonkcompanion.main.Barrel;
-import net.stonkcompanion.main.StonkBarrel;
 import net.stonkcompanion.main.StonkCompanionClient;
 
 @Mixin(HandledScreen.class)
@@ -104,6 +113,8 @@ public class HandledScreenMixin {
 		
 		if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) return;
 		
+		StonkCompanionClient.writeInteractionToFile();
+		
 		Barrel active_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
 		
 		boolean remove_barrel = active_barrel.validateTransaction();
@@ -142,6 +153,8 @@ public class HandledScreenMixin {
 		List<Slot> list_of_items = container.slots.stream().filter(slot -> slot.inventory.getClass() != PlayerInventory.class).toList();
 		
 		if(list_of_items.size() != 27) return;
+		
+		StonkCompanionClient.writeInteractionToFile();
 		
 		if(StonkCompanionClient.is_mistrade_checking) {
 			handlingMistradesClose(list_of_items);

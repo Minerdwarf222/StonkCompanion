@@ -418,7 +418,7 @@ public class ForexBarrel extends Barrel {
         	if (currency_one % 64 != 0) {
         		// Currency_one was added, but not in a full hyper amount. Therefore this is a non-full hyper input mistrade.
         		// I guess add the difference till it reaches 64? So if 1 hcs 1 ccs then they owe +63 ccs?
-        		full_hyper_owed = currency_one%64;
+        		full_hyper_owed = 64-currency_one%64;
                 expected_compressed = -1.0*((currency_one+full_hyper_owed)/64)*one_to_two;
                 
                 currency_full_str = currency_one_str;
@@ -437,7 +437,7 @@ public class ForexBarrel extends Barrel {
             // currency_two was added, currency_one was taken, so currency_one's expected amount can be predicted from it
         	
         	if (currency_two % 64 != 0) {
-        		full_hyper_owed = currency_two%64;
+        		full_hyper_owed = 64-currency_two%64;
         		expected_compressed = -1.0*((currency_two+full_hyper_owed)/64)*two_to_one;
         		
                 currency_full_str = currency_two_str;

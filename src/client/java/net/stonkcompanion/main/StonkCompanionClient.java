@@ -2,13 +2,18 @@ package net.stonkcompanion.main;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +38,8 @@ import net.stonkcompanion.suggestions.StonkCompanionCommandsSuggestions;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -70,7 +77,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static final Map<Integer, String> currency_type_to_compressed_text = Map.of(1, "cxp", 2, "ccs", 3, "ar");
 	public static final Map<Integer, String> currency_type_to_hyper_text = Map.of(1, "hxp", 2, "hcs", 3, "har");
 	
-	// Anti-monu flag
+	// In seconds how long verbose logging logs can exist.
+	// Set it to a week for rn.
+	private static int action_lifetime_seconds = 60*60*24*7;
+	public static ArrayList<String> action_buffer = new ArrayList<String>();
 	
 	// Quick Craft Handling
 	public static boolean is_quick_crafting = false;
@@ -159,6 +169,55 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}else {
 			return 0;
 		}
+	}
+	
+	public static void writeInteractionToFile() {
+		
+		int barrelx = StonkCompanionClient.last_right_click.getX();
+		int barrely = StonkCompanionClient.last_right_click.getY();
+		int barrelz = StonkCompanionClient.last_right_click.getZ();	
+		String barrel_pos = String.format("x%d_y%d_z%d", barrelx, barrely, barrelz);
+		
+		if(!StonkCompanionClient.action_buffer.isEmpty() && StonkCompanionClient.barrel_prices.containsKey(barrel_pos.replace("_", "/"))) {
+			
+			// Save all the actions to the file.
+			if(Files.isDirectory(FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion/interaction_logs"))) {
+
+				File interaction_log_file = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion/interaction_logs/"+barrel_pos+".txt").toFile();
+				
+				if(!interaction_log_file.exists()) {
+					try {
+						interaction_log_file.createNewFile();
+						StonkCompanionClient.action_buffer.add(0,"(Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)\n");
+					} catch (IOException e) {
+						// e.printStackTrace();
+						StonkCompanionClient.LOGGER.error("StonkCompanioned attempted to create file but failed. " + barrel_pos);
+					}
+				}
+				
+				
+				if(interaction_log_file.exists()) {
+					
+					// StonkCompanionClient.LOGGER.info(""+StonkCompanionClient.action_timestamp);
+					// StonkCompanionClient.LOGGER.info(StonkCompanionClient.action_buffer);
+				
+					try (BufferedWriter bw = new BufferedWriter(new FileWriter(interaction_log_file, true))) {
+						
+						for(String s : StonkCompanionClient.action_buffer) {
+							bw.append(s);
+						}
+						
+					} catch (IOException e) {
+
+						StonkCompanionClient.LOGGER.error("Could not find or read json file. " + barrel_pos);
+
+					}
+				}
+			}	
+			
+			StonkCompanionClient.action_buffer.clear();
+			
+		}	
 	}
 	
 	public static int getItemCurrencyType(String _s) {
@@ -865,7 +924,19 @@ public class StonkCompanionClient implements ClientModInitializer{
 		// barrel_transactions.putIfAbsent(quick_craft_barrel_pos, new HashMap<String, Integer>());
 		// barrel_timeout.put(quick_craft_barrel_pos, 0);
 		// barrel_transactions.get(quick_craft_barrel_pos).put(quick_craft_item_name, barrel_transactions.get(quick_craft_barrel_pos).getOrDefault(quick_craft_item_name, 0) + total_put_in_via_quick_craft);
-		if(StonkCompanionClient.is_verbose_logging && total_put_in_via_quick_craft != 0) StonkCompanionClient.LOGGER.info("Player put " + total_put_in_via_quick_craft + " of " + quick_craft_item_name + " into the barrel.");
+		if(StonkCompanionClient.is_verbose_logging && total_put_in_via_quick_craft != 0) {
+			
+			String new_interaction = "(%d, \"%s\", %d, \"%s\")\n".formatted(
+					Instant.now().getEpochSecond(),
+					active_barrel.label,
+					total_put_in_via_quick_craft,
+					quick_craft_item_name
+					);
+			
+			StonkCompanionClient.action_buffer.add(new_interaction);
+			
+			// StonkCompanionClient.LOGGER.info("Player put " + total_put_in_via_quick_craft + " of " + quick_craft_item_name + " into the barrel.");
+		}
 			
 		active_barrel.onClickActionAdd("", 0, quick_craft_item_name.toLowerCase(), total_put_in_via_quick_craft);
 		active_barrel.validateTransaction();
@@ -932,6 +1003,108 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}*/
 	}
 	
+	// Go through every verbose log file on start up.
+	// Delete all actions that have expired.
+	// Delete all files that no longer have actions.
+	// Not going to bother with index file atm.
+	private void verboseLoggingCleanup() {
+		
+		if(!is_verbose_logging) return;
+		
+		File verbose_logging_dir = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion/interaction_logs").toFile();
+		
+		ArrayList<File> remove_files = new ArrayList<File>();		
+		
+		long current_time = Instant.now().getEpochSecond();
+		
+		if(verbose_logging_dir.listFiles() != null) {
+			for(File barrel_verbose_log : verbose_logging_dir.listFiles()) {
+
+				BufferedWriter bw = null;
+				File _temp_file = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion/interaction_logs/temp_log_file").toFile();
+				
+				try (BufferedReader br = new BufferedReader(new FileReader(barrel_verbose_log))) {
+					
+					// "(Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)\n"
+					
+					String log_line = "";
+					boolean found_valid_timestamp = false;
+					boolean first_line_check = false;
+					boolean skipped_header = false;
+					
+					while ((log_line = br.readLine()) != null) {
+						
+						if(!skipped_header) {
+							skipped_header = true;
+							continue;
+						}
+						
+						if(bw != null && found_valid_timestamp) {
+							bw.write(log_line);
+							continue;
+						}
+						
+						String get_log_timestamp = log_line.substring(1, log_line.indexOf(','));
+						
+						long log_timestamp = -1;
+						
+						try {
+							log_timestamp = Long.parseLong(get_log_timestamp);
+						} catch(NumberFormatException e) {
+							LOGGER.warn(barrel_verbose_log.getName() + " had an invalid timestamp: " + get_log_timestamp);
+							continue;
+						}
+						
+						if(log_timestamp < current_time-action_lifetime_seconds) {
+							// This log has expired so we will ignore it.
+							if (bw == null) {
+								// If the first_line is not expired then early stop.
+								first_line_check = true;
+								bw = new BufferedWriter(new FileWriter(_temp_file));
+							}
+							continue;
+						}
+						
+						if(!first_line_check) {
+							// No point in reading and writing if nothing needs to change.
+							break;
+						}
+						
+						found_valid_timestamp = true;
+						
+						// Re-add header since file is being rewritten.
+						bw.write("(Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)\n");
+						
+						if (bw != null) {
+							bw.write(log_line);
+						}
+						
+					}
+					
+					if(!found_valid_timestamp) {
+						remove_files.add(barrel_verbose_log);
+					}
+					
+				} catch (IOException e) {
+					
+					LOGGER.error("Could not find or read interaction logging file. " + barrel_verbose_log.getName());
+					
+				}
+				
+				if (bw != null) {
+					// temp file was created and written to and so the current log needs to be replaced.
+					barrel_verbose_log.delete();
+					_temp_file.renameTo(barrel_verbose_log);
+				}
+			}
+			
+			for(File empty_file : remove_files) {
+				empty_file.delete();
+			}
+		}
+		
+	}
+	
 	// @SuppressWarnings("resource")
 	@Override
 	public void onInitializeClient() {
@@ -945,6 +1118,17 @@ public class StonkCompanionClient implements ClientModInitializer{
 			}
 		}else {
 			readConfig();
+		}
+		
+		if(!Files.isDirectory(FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion/interaction_logs"))) {
+			try {
+				Files.createDirectory(FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion/interaction_logs"));
+			} catch (IOException e) {
+				
+				LOGGER.error("StonkCompanion failed to create the interaction_logs config directory!");
+			}
+		} else {
+			verboseLoggingCleanup();
 		}
 		
 		ClientLifecycleEvents.CLIENT_STOPPING.register((client) -> {
