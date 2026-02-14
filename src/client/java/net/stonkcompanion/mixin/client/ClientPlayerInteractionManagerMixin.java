@@ -121,10 +121,12 @@ public class ClientPlayerInteractionManagerMixin {
 		
 		if(StonkCompanionClient.is_verbose_logging) {
 			
+			String barrel_label = StonkCompanionClient.barrel_prices.containsKey(barrel_pos) ? StonkCompanionClient.barrel_prices.get(barrel_pos).label : "No Label";
+			
 			// (Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)
 			String new_interaction = "(%d, \"%s\", %s, %d, %d, %s, %d \"%s\", %d \"%s\")\n".formatted(
 					Instant.now().getEpochSecond(),
-					StonkCompanionClient.barrel_prices.get(barrel_pos).label,
+					barrel_label,
 					player_inv,
 					slot_id,
 					button,
@@ -693,9 +695,11 @@ public class ClientPlayerInteractionManagerMixin {
 		
 		if(StonkCompanionClient.is_verbose_logging && item_qty_put != 0) {
 			
+			String barrel_label = StonkCompanionClient.barrel_prices.containsKey(barrel_pos) ? StonkCompanionClient.barrel_prices.get(barrel_pos).label : "No Label";
+			
 			String new_interaction = "(%d, \"%s\", %d, \"%s\")\n".formatted(
 					Instant.now().getEpochSecond(),
-					StonkCompanionClient.barrel_prices.get(barrel_pos).label,
+					barrel_label,
 					item_qty_put,
 					put_item_name
 					);
@@ -705,9 +709,11 @@ public class ClientPlayerInteractionManagerMixin {
 		}
 		if(StonkCompanionClient.is_verbose_logging && item_qty_taken != 0) {
 			
+			String barrel_label = StonkCompanionClient.barrel_prices.containsKey(barrel_pos) ? StonkCompanionClient.barrel_prices.get(barrel_pos).label : "No Label";
+			
 			String new_interaction = "(%d, \"%s\", %d, \"%s\")\n".formatted(
 					Instant.now().getEpochSecond(),
-					StonkCompanionClient.barrel_prices.get(barrel_pos).label,
+					barrel_label,
 					item_qty_taken*-1,
 					taken_item_name
 					);

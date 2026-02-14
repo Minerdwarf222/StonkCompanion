@@ -111,9 +111,9 @@ public class HandledScreenMixin {
 		int barrelz = StonkCompanionClient.last_right_click.getZ();	
 		String barrel_pos = String.format("x%d/y%d/z%d", barrelx, barrely, barrelz);
 		
-		if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) return;
-		
 		StonkCompanionClient.writeInteractionToFile();
+		
+		if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) return;
 		
 		Barrel active_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
 		

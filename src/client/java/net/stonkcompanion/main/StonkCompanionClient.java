@@ -213,11 +213,11 @@ public class StonkCompanionClient implements ClientModInitializer{
 
 					}
 				}
-			}	
-			
-			StonkCompanionClient.action_buffer.clear();
-			
+			}			
 		}	
+		
+		StonkCompanionClient.action_buffer.clear();
+		
 	}
 	
 	public static int getItemCurrencyType(String _s) {
