@@ -137,7 +137,7 @@ public class ClientPlayerInteractionManagerMixin {
 					active_item_str.substring(active_item_str.lastIndexOf('.')+1)
 					);			
 
-			StonkCompanionClient.action_buffer.add(new_interaction);
+			StonkCompanionClient.potential_action_log = new_interaction;
 			
 			// StonkCompanionClient.LOGGER.info(player_inv + " slot. Slot ID: " + slot_id + " Button: " + button + " Action Type: " + action_type.name() + " Player Cursor: x" + player_itemstk.getCount() + " " + player_item_str + " Active Slot Item: x" + active_slot.getCount() + " " + active_item_str);
 		}
@@ -692,6 +692,11 @@ public class ClientPlayerInteractionManagerMixin {
 		}
 			
 		onClickActionMistradeCheck(barrel_pos);
+		
+		if(StonkCompanionClient.is_verbose_logging && !StonkCompanionClient.potential_action_log.isEmpty() && (item_qty_put != 0 || item_qty_taken != 0)) {
+			StonkCompanionClient.action_buffer.add(StonkCompanionClient.potential_action_log);
+			StonkCompanionClient.potential_action_log = "";
+		}
 		
 		if(StonkCompanionClient.is_verbose_logging && item_qty_put != 0) {
 			

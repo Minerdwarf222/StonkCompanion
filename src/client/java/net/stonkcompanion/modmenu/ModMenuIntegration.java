@@ -84,6 +84,13 @@ public class ModMenuIntegration implements ModMenuApi {
 					.setSaveConsumer(new_value -> StonkCompanionClient.is_verbose_logging = new_value)
 					.build()
 					);
+
+			general.addEntry(entry_builder.startIntField(Text.of("Interaction log Lifetime in seconds"), StonkCompanionClient.action_lifetime_seconds)
+					.setDefaultValue(60*60*24*7)
+					.setTooltip(Text.of("The amount of time in seconds an interaction log will be stored in the config file before it is removed."))
+					.setSaveConsumer(new_value -> StonkCompanionClient.action_lifetime_seconds = new_value)
+					.build()
+					);
         	
 			Screen screen = builder.build();
 			return screen;

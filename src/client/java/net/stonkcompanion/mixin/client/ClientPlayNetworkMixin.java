@@ -14,7 +14,6 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -27,7 +26,6 @@ import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.stonkcompanion.main.StonkCompanionClient;
 import net.stonkcompanion.main.Barrel;
-import net.stonkcompanion.main.Barrel.BarrelTypes;
 import net.stonkcompanion.main.ForexBarrel;
 import net.stonkcompanion.main.StonkBarrel;
 
@@ -42,13 +40,13 @@ public class ClientPlayNetworkMixin {
 		
 		MinecraftClient mc = MinecraftClient.getInstance();
 		
-        Screen screen = mc.currentScreen;
+        // Screen screen = mc.currentScreen;
         ClientPlayerEntity playerEntity = mc.player;
         
         // if(playerEntity == null) return;
         // if(screen != null) StonkCompanionClient.LOGGER.error(screen.getClass().getCanonicalName());
         if (true) {
-            ItemStack itemStack = packet.getStack();
+            // ItemStack itemStack = packet.getStack();
             int i = packet.getSlot();
             //StonkCompanionClient.LOGGER.error("Doing something?: " + itemStack.getName().getString() + " Slot: " + i);
             if (packet.getSyncId() == ScreenHandlerSlotUpdateS2CPacket.UPDATE_CURSOR_SYNC_ID) {
@@ -130,7 +128,6 @@ public class ClientPlayNetworkMixin {
 	    }else if(currency_delta != 0) {
 	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, false);	
 	    	double abs_currency_delta = Math.abs(currency_delta);
-	    	// TODO: Turn this into an array of two strings.
 	    	if(StonkCompanionClient.is_compressed_only) {
 		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
 	    	}else {
@@ -241,7 +238,6 @@ public class ClientPlayNetworkMixin {
 		
 		// Get all the items
 		// First. Sign check!
-		// TODO: Handle click-through
 		// Check for if you are within a certain bounds. Currently don't care about that.
 		/*if(StonkCompanionClient.nw_coords[0] > barrelx
 				   || StonkCompanionClient.se_coords[0] < barrelx

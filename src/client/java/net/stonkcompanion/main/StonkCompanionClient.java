@@ -9,7 +9,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.Instant;
@@ -38,8 +37,6 @@ import net.stonkcompanion.suggestions.StonkCompanionCommandsSuggestions;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -79,8 +76,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	// In seconds how long verbose logging logs can exist.
 	// Set it to a week for rn.
-	private static int action_lifetime_seconds = 60*60*24*7;
+	public static int action_lifetime_seconds = 60*60*24*7;
 	public static ArrayList<String> action_buffer = new ArrayList<String>();
+	public static String potential_action_log = "";
 	
 	// Quick Craft Handling
 	public static boolean is_quick_crafting = false;
@@ -310,8 +308,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 		String label = "";
 
 		// If this is a forex barrel, we will assume that one_to_two is the ask and two_to_one is the bid.
-		String ask_price = "";
-		String bid_price = "";
 		double ask_price_compressed = -1;
 		double bid_price_compressed = -1;
 		
@@ -390,12 +386,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 
 								if (left_side_currency < right_side_currency) {
 									// This is the one_to_two value
-									ask_price = _sign_line.trim();
 									ask_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_arrow+2)); // +1 skips arrow, +2 skips space
 
 								} else {
 									// This is the two_to_one value
-									bid_price = _sign_line.trim();
 									bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_arrow+2)); // +1 skips arrow, +2 skips space
 								}
 							}
@@ -403,18 +397,12 @@ public class StonkCompanionClient implements ClientModInitializer{
 						} else {
 
 							if (find_ask != -1) {
-								
-								ask_price = _sign_line.substring(find_ask).trim();
-								
 								// We now have the line of text with the buy price.
 								currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
 								
 								ask_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_ask+7));
 								
 							} else if(find_bid != -1) {
-								
-								bid_price = _sign_line.substring(find_bid).trim();
-								
 								// We now have the line of text with the sell price.
 								currency_type = StonkCompanionClient.getCurrencyType(_sign_line);
 								bid_price_compressed = StonkCompanionClient.convertToBaseUnit(_sign_line.substring(find_bid+8));
@@ -530,7 +518,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 			// the other side's value.
 
 			// return null; // uncomment below when its all done
-			// TODO: Add handling for -1 to -3 in currency type handling
 			return new String[]{interpolated_price+"", currency_type+"", demand_modifier+"", label};
 
 		} else {
@@ -589,6 +576,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		config_stuff.addProperty("offhand_swap", has_offhandswap_off);
 		config_stuff.addProperty("is_verbose_logging", is_verbose_logging);
 		config_stuff.addProperty("change_coreprotect", change_coreprotect);
+		config_stuff.addProperty("action_lifetime_seconds", action_lifetime_seconds);
 		
 		try (FileWriter writer = new FileWriter(top_dir+"/StonkCompanionConfig.json")){
 			Gson gson = new GsonBuilder().create();
@@ -640,6 +628,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 				if(test_obj.has("change_coreprotect")) {
 					change_coreprotect = test_obj.get("change_coreprotect").getAsBoolean();
 				}
+				
+				if(test_obj.has("action_lifetime_seconds")) {
+					action_lifetime_seconds = test_obj.get("action_lifetime_seconds").getAsInt();
+				}
 
 			} catch (IOException e) {
 
@@ -667,8 +659,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		// Time to check if it is a mistrade or not.
 			
 		Barrel traded_barrel = barrel_prices.get(barrel_pos);
-			
-		// TODO: Clean up currency conversions.
+
 		// TODO: Look into maybe checking what is being traded and not just assuming only the correct item is being traded.
 		double r1_compressed = 0.0;
 		double r2_compressed = 0.0;
@@ -926,6 +917,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 		// barrel_transactions.get(quick_craft_barrel_pos).put(quick_craft_item_name, barrel_transactions.get(quick_craft_barrel_pos).getOrDefault(quick_craft_item_name, 0) + total_put_in_via_quick_craft);
 		if(StonkCompanionClient.is_verbose_logging && total_put_in_via_quick_craft != 0) {
 			
+			if(!StonkCompanionClient.potential_action_log.isEmpty()) StonkCompanionClient.action_buffer.add(StonkCompanionClient.potential_action_log);
+			StonkCompanionClient.potential_action_log = "";
+			
 			String new_interaction = "(%d, \"%s\", %d, \"%s\")\n".formatted(
 					Instant.now().getEpochSecond(),
 					active_barrel.label,
@@ -994,7 +988,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 		}else if(currency_delta != 0) {
 		  	StonkCompanionClient.barrel_transaction_validity.put(quick_craft_barrel_pos, false);	
 		   	double abs_currency_delta = Math.abs(currency_delta);
-		  	// TODO: Turn this into an array of two strings.
 		   	if(StonkCompanionClient.is_compressed_only) {
 		    	StonkCompanionClient.barrel_transaction_solution.put(quick_craft_barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
 		   	}else {
@@ -1040,7 +1033,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 						}
 						
 						if(bw != null && found_valid_timestamp) {
-							bw.write(log_line);
+							bw.write(log_line+"\n");
 							continue;
 						}
 						
@@ -1074,10 +1067,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 						
 						// Re-add header since file is being rewritten.
 						bw.write("(Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)\n");
-						
-						if (bw != null) {
-							bw.write(log_line);
-						}
+						bw.write(log_line+"\n");
 						
 					}
 					
@@ -1093,13 +1083,24 @@ public class StonkCompanionClient implements ClientModInitializer{
 				
 				if (bw != null) {
 					// temp file was created and written to and so the current log needs to be replaced.
+					try {
+						bw.close();
+					} catch (IOException e) {
+						LOGGER.error("Could not write to file." + barrel_verbose_log.getName());
+					}
 					barrel_verbose_log.delete();
 					_temp_file.renameTo(barrel_verbose_log);
+					_temp_file.delete();
 				}
 			}
 			
 			for(File empty_file : remove_files) {
 				empty_file.delete();
+			}
+			
+			File _temp_file = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion/interaction_logs/temp_log_file").toFile();
+			if(_temp_file.exists()) {
+				_temp_file.delete();
 			}
 		}
 		
@@ -1360,7 +1361,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	    				    if(currency_delta != 0) {
 	    				    	double abs_currency_delta = Math.abs(currency_delta);
-	    				    	// TODO: Turn this into an array of two strings.
 	    				    	if(StonkCompanionClient.is_compressed_only) {
 	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
 	    				    	}else {
