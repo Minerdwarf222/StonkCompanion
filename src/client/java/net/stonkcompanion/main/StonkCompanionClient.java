@@ -39,6 +39,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 
@@ -1284,6 +1285,299 @@ public class StonkCompanionClient implements ClientModInitializer{
 		});
 		
 	    ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> { LiteralCommandNode<FabricClientCommandSource> stonk_companion_node = dispatcher.register(ClientCommandManager.literal("stonkcompanion")
+	    .then(ClientCommandManager.literal("showtext")
+	    		.executes(context -> {
+	    			context.getSource().sendFeedback(Text.literal("[StonkCompanion] Mistrades and fairprice " + (is_showing_text ? "are" : "are not") +" being printed to chat."));
+	    			return 1;
+	    		})
+	    		.then(ClientCommandManager.literal("toggle")
+	    				.executes(context -> {
+		    				context.getSource().sendFeedback(Text.literal(is_showing_text ? "[StonkCompanion] Stopped printing mistrade and fairprice text." : "[StonkCompanion] Will print mistrade and fairprice text."));
+		    				is_showing_text = !is_showing_text;	
+	    					return 1;
+	    					})
+	    		)
+	    		.then(ClientCommandManager.literal("on")
+	    				.executes(context -> {
+	    					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Will print mistrade and fairprice text."));
+	    					is_showing_text = true;	
+	    					return 1;
+	    				})
+	    		)
+	    		.then(ClientCommandManager.literal("off")
+	    				.executes(context -> {
+	    					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Stopped printing mistrade and fairprice text."));
+	    					is_showing_text = false;	
+	    					return 1;
+	    				})
+	    		)
+	    )
+	    .then(ClientCommandManager.literal("showgui")
+	    		.executes(context -> {
+	    			context.getSource().sendFeedback(Text.literal("[StonkCompanion] Barrel gui " + (is_showing_gui ? "is" : "is not") +" being shown."));
+	    			return 1;
+	    		})
+	    		.then(ClientCommandManager.literal("toggle")
+	    				.executes(context -> {
+		    				context.getSource().sendFeedback(Text.literal(is_showing_gui ? "[StonkCompanion] Stopped showing barrel gui." : "[StonkCompanion] Showing barrel gui."));
+		    				is_showing_gui = !is_showing_gui;	
+	    					return 1;
+	    					})
+	    		)
+	    		.then(ClientCommandManager.literal("on")
+	    				.executes(context -> {
+	    					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Showing barrel gui."));
+	    					is_showing_gui = true;	
+	    					return 1;
+	    				})
+	    		)
+	    		.then(ClientCommandManager.literal("off")
+	    				.executes(context -> {
+	    					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Stopped showing barrel gui."));
+	    					is_showing_gui = false;	
+	    					return 1;
+	    				})
+	    		)
+	    )
+	    .then(ClientCommandManager.literal("compressed")
+	    		.executes(context -> {
+	    			context.getSource().sendFeedback(Text.literal("[StonkCompanion] Currency " + (is_showing_text ? "is" : "is not") +" being shown only in compressed."));
+	    			return 1;
+	    		})
+	    		.then(ClientCommandManager.literal("toggle")
+	    				.executes(context -> {
+		    				context.getSource().sendFeedback(Text.literal(is_compressed_only ? "[StonkCompanion] Showing hyper and compressed now." : "[StonkCompanion] Showing only in compressed."));
+		    				is_compressed_only = !is_compressed_only;
+		    				
+		    				for(String barrel_pos : barrel_prices.keySet()) {
+		    					
+		    					if(barrel_prices.get(barrel_pos) == null) {
+		    						barrel_prices.remove(barrel_pos);
+		    						continue;
+		    					}
+		    					
+		    					barrel_prices.get(barrel_pos).convertSolutionToCompressed();
+
+		    				}
+	    					return 1;
+	    					})
+	    		)
+	    		.then(ClientCommandManager.literal("on")
+	    				.executes(context -> {
+	    					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Showing only in compressed."));
+	    					
+	    					if(is_compressed_only) return 1;
+	    					
+		    				for(String barrel_pos : barrel_prices.keySet()) {
+		    					
+		    					if(barrel_prices.get(barrel_pos) == null) {
+		    						barrel_prices.remove(barrel_pos);
+		    						continue;
+		    					}
+		    					
+		    					barrel_prices.get(barrel_pos).convertSolutionToCompressed();
+
+		    				}
+		    				
+	    					is_compressed_only = true;	
+	    					
+	    					return 1;
+	    				})
+	    		)
+	    		.then(ClientCommandManager.literal("off")
+	    				.executes(context -> {
+	    					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Showing hyper and compressed now."));
+	    					
+	    					if(!is_compressed_only) return 1;
+	    					
+		    				for(String barrel_pos : barrel_prices.keySet()) {
+		    					
+		    					if(barrel_prices.get(barrel_pos) == null) {
+		    						barrel_prices.remove(barrel_pos);
+		    						continue;
+		    					}
+		    					
+		    					barrel_prices.get(barrel_pos).convertSolutionToCompressed();
+
+		    				}
+		    				
+	    					is_compressed_only = false;	
+	    					
+	    					return 1;
+	    				})
+	    		)
+	    )
+	    .then(ClientCommandManager.literal("mistrades")
+				.executes(context -> {
+					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Checking transactions..."));
+    				mistradeCheck();
+					return 1;
+				})
+				.then(ClientCommandManager.literal("clear")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Clearing all transactions."));
+		    				barrel_prices.clear();
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("toggle")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal(is_mistrade_checking ? "[StonkCompanion] Stopped detecting mistrades." : "[StonkCompanion] Detecting mistrades."));
+		    				is_mistrade_checking = !is_mistrade_checking;	
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("on")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Detecting mistrades."));
+		    				is_mistrade_checking = true;	
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("off")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Stopped detecting mistrades."));
+		    				is_mistrade_checking = false;	
+							return 1;
+						})
+				)
+	    )
+		.then(ClientCommandManager.literal("checkpoints")
+				.executes(context -> {
+					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Checkpointing is " + (checkpointing ? "on" : "off") + ". Checkpoints are located in config/StonkCompanion."));
+					return 1;
+				})
+				.then(ClientCommandManager.literal("clear")
+						.executes(context -> {
+			    			context.getSource().sendFeedback(Text.literal("[StonkCompanion] Cleared existing checkpoints."));
+			    			checkpoints = new JsonObject();
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("toggle")
+						.executes(context -> {
+			    			context.getSource().sendFeedback(Text.literal(checkpointing ? "[StonkCompanion] Stopped getting checkpoints." : "[StonkCompanion] Getting checkpoints."));
+			    			checkpointing = !checkpointing;
+			    			if(!checkpointing) {
+			    				writeCheckpoints();
+			    			}
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("on")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Getting checkpoints."));
+							checkpointing = true;	
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("off")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Stopped getting checkpoints."));
+			    			if(!checkpointing) {
+			    				writeCheckpoints();
+			    			}
+							checkpointing = false;	
+							return 1;
+						})
+				)
+	    )
+		.then(ClientCommandManager.literal("coreprotect")
+				.executes(context -> {
+					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Coreprotect changing is " + (change_coreprotect ? "on" : "off") +"."));
+					return 1;
+				})
+				.then(ClientCommandManager.literal("toggle")
+						.executes(context -> {
+			    			context.getSource().sendFeedback(Text.literal(change_coreprotect ? "[StonkCompanion] Stopped changing coreprotect." : "[StonkCompanion] Changing coreprotect."));
+			    			change_coreprotect = !change_coreprotect;
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("on")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Changing coreprotect."));
+							change_coreprotect = true;	
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("off")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Stopped changing coreprotect."));
+			    			change_coreprotect = false;	
+							return 1;
+						})
+				)
+	    )
+		.then(ClientCommandManager.literal("fairprice")
+				.executes(context -> {
+					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Fairprice is " + (fairprice_detection ? "on" : "off") +"."));
+					return 1;
+				})
+				.then(ClientCommandManager.literal("toggle")
+						.executes(context -> {
+		    				context.getSource().sendFeedback(Text.literal(fairprice_detection ? "[StonkCompanion] Stopped detecting Fairprice." : "[StonkCompanion] Detecting Fairprice."));
+		    				fairprice_detection = !fairprice_detection;
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("on")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Detecting Fairprice."));
+							fairprice_detection = true;	
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("off")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Stopped detecting Fairprice."));
+							fairprice_detection = false;	
+							return 1;
+						})
+				)
+	    )
+		.then(ClientCommandManager.literal("actionlogs")
+				.executes(context -> {
+					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Actionlogs are being " + (is_verbose_logging ? "tracked" : "not tracked") +"."));
+					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Actionlogs are stored in config/StonkCompanion/interaction_logs."));					
+					context.getSource().sendFeedback(Text.literal("[StonkCompanion] Actionlogs are stored for "+ action_lifetime_seconds/60/60/24 +" days before being pruned."));
+					return 1;
+				})
+				.then(ClientCommandManager.literal("toggle")
+						.executes(context -> {
+		    				context.getSource().sendFeedback(Text.literal(is_verbose_logging ? "[StonkCompanion] Stopped actionlog tracking." : "[StonkCompanion] Started actionlog tracking."));
+		    				is_verbose_logging = !is_verbose_logging;	
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("on")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Started actionlog tracking."));
+							is_verbose_logging = true;	
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("off")
+						.executes(context -> {
+							context.getSource().sendFeedback(Text.literal("[StonkCompanion] Stopped actionlog tracking."));
+							is_verbose_logging = false;	
+							return 1;
+						})
+				)
+				.then(ClientCommandManager.literal("max_age")
+						.then(argument("given_days", IntegerArgumentType.integer(1, 30)))
+							.executes(context -> {
+								int given_days = IntegerArgumentType.getInteger(context, "given_days");
+								action_lifetime_seconds = given_days*24*60*60;	
+								return 1;
+							})
+				)
+	    )
+		);
+	    dispatcher.register(ClientCommandManager.literal("sc").redirect(stonk_companion_node));
+	    });
+		
+	    /*ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> { LiteralCommandNode<FabricClientCommandSource> stonk_companion_node = dispatcher.register(ClientCommandManager.literal("stonkcompanion")
 		.then(argument("command", StringArgumentType.string())
 				.suggests(StonkCompanionCommandsSuggestions.commandsSUGGESTION_PROVIDER)
 	    		.executes(context -> {
@@ -1300,18 +1594,23 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			}else if(given_command.equals("togglefairprice")) {
 	    				context.getSource().sendFeedback(Text.literal(fairprice_detection ? "[StonkCompanion] Stopped detecting FairStonk." : "[StonkCompanion] Detecting FairStonk."));
 	    				fairprice_detection = !fairprice_detection;
+	    				
 	    			}else if(given_command.equals("togglemistradecheck")) {
 	    				context.getSource().sendFeedback(Text.literal(is_mistrade_checking ? "[StonkCompanion] Stopped detecting mistrades." : "[StonkCompanion] Detecting mistrades."));
 	    				is_mistrade_checking = !is_mistrade_checking;	
+	    				
 	    			}else if(given_command.equals("mistradecheck")) {
 	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Checking transactions..."));
 	    				mistradeCheck();
+	    				
 	    			}else if(given_command.equals("toggleverboselogging")) {
 	    				context.getSource().sendFeedback(Text.literal(is_verbose_logging ? "[StonkCompanion] Stopped verbose logging." : "[StonkCompanion] Started verbose logging."));
 	    				is_verbose_logging = !is_verbose_logging;	
+	    				
 	    			}else if(given_command.equals("toggleshowingtext")) {
 	    				context.getSource().sendFeedback(Text.literal(is_showing_text ? "[StonkCompanion] Stopped printing mistrade and fairprice text." : "[StonkCompanion] Will print mistrade and fairprice text."));
 	    				is_showing_text = !is_showing_text;	
+	    				
 	    			}else if(given_command.equals("toggleshowinggui")) {
 	    				context.getSource().sendFeedback(Text.literal(is_showing_gui ? "[StonkCompanion] Stopped showing barrel gui." : "[StonkCompanion] Showing barrel gui."));
 	    				is_showing_gui = !is_showing_gui;	
@@ -1319,15 +1618,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    			}else if(given_command.equals("togglehavingoffhandswapon")) {
 	    				context.getSource().sendFeedback(Text.literal(has_offhandswap_off ? "[StonkCompanion] Registering that offhand swap is allowed in peb." : "[StonkCompanion] Registering that offhand swap is not allowed in peb."));
 	    				has_offhandswap_off = !has_offhandswap_off;	
+	    				
 	    			}else if(given_command.equals("clearreports")) {
 	    				context.getSource().sendFeedback(Text.literal("[StonkCompanion] Clearing all transactions."));
-	    				
-	    				//barrel_timeout.clear();
-	    				//barrel_transactions.clear();
 	    				barrel_prices.clear();
-	    				//barrel_actions.clear();
-	    				//barrel_transaction_solution.clear();
-	    				//barrel_transaction_validity.clear();
 	    				
 	    			}else if(given_command.equals("togglecompressed")) {
 	    				context.getSource().sendFeedback(Text.literal(is_compressed_only ? "[StonkCompanion] Showing hyper and compressed now." : "[StonkCompanion] Showing only in compressed."));
@@ -1341,39 +1635,14 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    					}
 	    					
 	    					barrel_prices.get(barrel_pos).convertSolutionToCompressed();
-	    					
-	    					/*if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) continue;
-	    					if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) continue;
-	    					
-	    					Barrel traded_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
-	    					double other_items = StonkCompanionClient.barrel_actions.get(barrel_pos)[0];
-	    					double actual_compressed = StonkCompanionClient.barrel_actions.get(barrel_pos)[1];
-	    					
-	    					double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
-	    					
-	    				    double currency_delta = expected_compressed - actual_compressed;
-	    				    
-	    				    String currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(traded_barrel.currency_type);
-	    				    String hyper_str = StonkCompanionClient.currency_type_to_hyper_text.get(traded_barrel.currency_type);
-	    				    
-	    				    // Bounds check.
-	    				    if(currency_delta < 0.0005 && currency_delta > -0.0005) currency_delta = 0;
-	
-	    				    if(currency_delta != 0) {
-	    				    	double abs_currency_delta = Math.abs(currency_delta);
-	    				    	if(StonkCompanionClient.is_compressed_only) {
-	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
-	    				    	}else {
-	    					    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
-	    				    	}
-	    				    }*/
+
 	    				}	    
 	    			}
 	    			return 1;
 	    		}
 	    	)));
 	    	dispatcher.register(ClientCommandManager.literal("sc").redirect(stonk_companion_node));
-	    	});
+	    	});*/
 		
 	}
 
