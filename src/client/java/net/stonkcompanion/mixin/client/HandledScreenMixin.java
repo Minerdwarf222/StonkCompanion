@@ -17,6 +17,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.stonkcompanion.main.Barrel;
 import net.stonkcompanion.main.StonkCompanionClient;
@@ -106,10 +107,17 @@ public class HandledScreenMixin {
 		
 		boolean remove_barrel = active_barrel.validateTransaction();
 		
-	    if(!active_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal("[StonkCompanion] Mistrade detected in " + active_barrel.label));
-		
 	    if(StonkCompanionClient.is_showing_text && !active_barrel.mistrade_text_message.isBlank() && !active_barrel.barrel_transaction_validity) {
 	    	mc.player.sendMessage(Text.literal(active_barrel.mistrade_text_message));
+	    }
+	    
+	    if(!active_barrel.barrel_transaction_validity) {
+	    	
+	    	MutableText mistrade_detected_msg = Text.literal("§7[")
+	    			.append(StonkCompanionClient.stonk_companion_logo)
+	    			.append(Text.literal("§7] §cMistrade detected in " + active_barrel.label +"."));
+	    	
+	    	mc.player.sendMessage(mistrade_detected_msg);
 	    }
 		
 		if(remove_barrel) {
@@ -143,16 +151,16 @@ public class HandledScreenMixin {
 		
 		StonkCompanionClient.writeInteractionToFile();
 		
+		if(StonkCompanionClient.fairprice_detection) {
+			sendFairPriceMessage(list_of_items);
+		}
+		
 		if(StonkCompanionClient.is_mistrade_checking) {
 			handlingMistradesClose(list_of_items);
 		}
 		
 		if(StonkCompanionClient.checkpointing) {
 			stonkCompanionCreateCheckpoint(list_of_items);
-		}
-		
-		if(StonkCompanionClient.fairprice_detection) {
-			sendFairPriceMessage(list_of_items);
 		}
 		
 		StonkCompanionClient.anti_monu_is_not_barrel = true;
@@ -179,10 +187,17 @@ public class HandledScreenMixin {
 		
 		boolean remove_barrel = closing_barrel.validateTransaction();
 		
-	    if(!closing_barrel.barrel_transaction_validity) mc.player.sendMessage(Text.literal("[StonkCompanion] Mistrade detected in " + closing_barrel.label));
-		
 	    if(StonkCompanionClient.is_showing_text && !closing_barrel.mistrade_text_message.isBlank()) mc.player.sendMessage(Text.literal(closing_barrel.mistrade_text_message));
 		
+	    if(!closing_barrel.barrel_transaction_validity) {
+	    	
+	    	MutableText mistrade_detected_msg = Text.literal("§7[")
+	    			.append(StonkCompanionClient.stonk_companion_logo)
+	    			.append(Text.literal("§7] §cMistrade detected in " + closing_barrel.label +"."));
+	    	
+	    	mc.player.sendMessage(mistrade_detected_msg);
+	    }
+	    
 		if(remove_barrel) {
 			StonkCompanionClient.barrel_prices.remove(barrel_pos);
 		}

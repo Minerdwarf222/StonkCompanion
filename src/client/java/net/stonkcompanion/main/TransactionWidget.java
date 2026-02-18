@@ -84,15 +84,18 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		int green_color = 0xff00ff00;
 		int light_blue_color = 0xff00ffff;
 		
+		if (!StonkCompanionClient.is_latest_version) {
+			draw_context.drawCenteredTextWithShadow(client.textRenderer, "Latest Version: " + StonkCompanionClient.latest_mod_version, (int)dimension.getCenterX(), dimension.y+y_diff_text, yellow_color);
+			y_diff_text += font_height + 1;
+		}
+		
 		draw_context.drawHorizontalLine(dimension.x+1, dimension.x + dimension.width - 1, dimension.y+y_diff_text, light_blue_color);
-		y_diff_text = 5;
+		y_diff_text += 4;
 		
-		MutableText stonk_companion = Text.literal("Stonk");
-		stonk_companion.withColor(yellow_color);
-		stonk_companion.append(Text.literal("Co").withColor(green_color));
-		stonk_companion.append(Text.literal("mpanion").withColor(light_blue_color));
+		MutableText gui_stonkcomp_logo = StonkCompanionClient.stonk_companion_logo.copy();	
+		gui_stonkcomp_logo.append(" " + StonkCompanionClient.current_mod_version).withColor(yellow_color);
 		
-		draw_context.drawCenteredTextWithShadow(client.textRenderer, stonk_companion, (int)dimension.getCenterX(), dimension.y+y_diff_text, yellow_color);
+		draw_context.drawCenteredTextWithShadow(client.textRenderer, gui_stonkcomp_logo, (int)dimension.getCenterX(), dimension.y+y_diff_text, yellow_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "Stonk", dimension.x+45, dimension.y+y_diff_text, yellow_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "Co", dimension.x+45+client.textRenderer.getWidth("Stonk"), dimension.y+y_diff_text, green_color);
 		//draw_context.drawTextWithShadow(client.textRenderer, "mpanion", dimension.x+45+client.textRenderer.getWidth("StonkCo"), dimension.y+y_diff_text, light_blue_color);
@@ -127,6 +130,8 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
         
         int x = ((HandledScreenAccessor) parent).getX() - background_rect_width;
         int y = ((HandledScreenAccessor) parent).getY();
+        
+        y -= (!StonkCompanionClient.is_latest_version) ? client.textRenderer.fontHeight + 1 : 0;
 
         return new Rectangle(x, y, background_rect_width, background_rect_height);
     }

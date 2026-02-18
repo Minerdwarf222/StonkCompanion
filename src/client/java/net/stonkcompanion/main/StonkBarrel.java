@@ -150,6 +150,16 @@ public class StonkBarrel extends Barrel {
 		gui_text[0][2] = sell_for;
 		if(StonkCompanionClient.fairprice_detection && !fairprice_gui_message.isBlank()) gui_text[0][3] = Text.literal(fairprice_gui_message);
 		
+		if(StonkCompanionClient.is_stopping_mistrade_dect) {
+			this.gui_text[1] = new Text[4];	
+			gui_text[1][0] = Text.literal("StonkCompanion is out of date.").withColor(red_color);
+			gui_text[1][1] = Text.literal("Installed: {" + StonkCompanionClient.current_mod_version + "}").withColor(red_color);
+			gui_text[1][2] = Text.literal("Update to {" + StonkCompanionClient.mininum_mod_version + "} or higher").withColor(red_color);
+			gui_text[1][3] = Text.literal("to re-enable mistrade checking.").withColor(red_color);
+			super.calcuateGuiHeight();
+			return;
+		}
+		
 		if (barrel_actions[0] != 0 || barrel_actions[1] != 0) {
 			gui_text[1][0] = Text.literal("Recent Interactions:");
 			if(barrel_actions[0] != 0) {
@@ -348,6 +358,24 @@ public class StonkBarrel extends Barrel {
 			generateGuiText();
 			return true;
 		}
+		
+		if(StonkCompanionClient.is_stopping_mistrade_dect) {
+			barrel_transaction_validity = true;
+			barrel_transaction_solution = "";
+			barrel_transaction_solution_mats = "";
+			
+			StringBuilder build_mistrade_text = new StringBuilder();
+			
+			build_mistrade_text.append("---[StonkCompanion " + StonkCompanionClient.current_mod_version + "]---");
+			build_mistrade_text.append("\n§cStonkCompanion is out of date.");
+			build_mistrade_text.append("\nInstalled: {" + StonkCompanionClient.current_mod_version + "}");
+			build_mistrade_text.append("\nUpdate to {" + StonkCompanionClient.mininum_mod_version +"} or higher to re-enable mistrade checking.");
+
+			mistrade_text_message = build_mistrade_text.toString();
+			
+			generateGuiText();
+			return true;
+		}
 			
 		// So we should have a map of items to their total qtyies traded in this barrel
 		// and a map of barrel position to all the needed price info.
@@ -489,7 +517,11 @@ public class StonkBarrel extends Barrel {
 	    	
 		StringBuilder build_mistrade_text = new StringBuilder();
 		
-		build_mistrade_text.append("---[StonkCompanion]---");
+		if(!StonkCompanionClient.is_latest_version) {
+			build_mistrade_text.append("[StonkCompanion] There is a newer version! " + StonkCompanionClient.latest_mod_version +"\n");
+		}
+		
+		build_mistrade_text.append("---[StonkCompanion " + StonkCompanionClient.current_mod_version + "]---");
 		build_mistrade_text.append("\n%s (%s)".formatted(label, coords));
 		build_mistrade_text.append("\nBuy: %s %s (%s)".formatted(StonkCompanionClient.df1.format(compressed_ask_price), currency_str, ask_price));
 		build_mistrade_text.append("\nSell: %s %s (%s)".formatted(StonkCompanionClient.df1.format(compressed_bid_price), currency_str, bid_price));
@@ -497,6 +529,7 @@ public class StonkBarrel extends Barrel {
 		build_mistrade_text.append("\n%s: %s %s (%d %s %s %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", StonkCompanionClient.df1.format(Math.abs(actual_compressed)), currency_str, actual_hyper_amount, hyper_str, StonkCompanionClient.df1.format(actual_compressed_amount), currency_str));
 		if(other_items!=0) build_mistrade_text.append("\nUnit Price: %s".formatted(StonkCompanionClient.df1.format(Math.abs(actual_compressed / (other_items)))));
 		if(barrel_transaction_validity) build_mistrade_text.append("\nValid Transaction");
+		if(!barrel_transaction_validity) build_mistrade_text.append("\n§cMistrade Detected§r");
 		if(currency_delta != 0) build_mistrade_text.append("\nCorrection amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str, corrective_hyper_amount, hyper_str, StonkCompanionClient.df1.format(corrective_compressed_amount), currency_str));
 		if(mats_delta != 0) build_mistrade_text.append("\n(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta)));
 		build_mistrade_text.append("\nTime since last log: %ds/%ds".formatted(time_since_last_movement/20, transaction_lifetime/20));

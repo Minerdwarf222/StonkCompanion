@@ -5,10 +5,16 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
 
 public class Barrel {
 
@@ -54,9 +60,74 @@ public class Barrel {
 	public BarrelTypes barrel_type = BarrelTypes.BASE;
 
 	public Barrel (String label, String coords) {
+		
+		if(StonkCompanionClient.latest_mod_version.isBlank()) {
+			// Here we are going to check if we can get the latest version of stonkcompanion and required version.
+			checkVersionSign();			
+		}
+		
 		this.label = label.trim();
 		this.coords = coords;
 		splitLabel();
+	}
+	
+	private void checkVersionSign() {
+		BlockPos sign_coord = new BlockPos(-631, 38, 1067);
+		
+		MinecraftClient client = MinecraftClient.getInstance();
+		
+		if(!client.world.isClient) return;
+		
+		BlockEntity test_block_entity = client.player.getWorld().getBlockEntity(sign_coord);
+		
+		if(test_block_entity == null) return;		
+			
+		if(!test_block_entity.getType().equals(BlockEntityType.SIGN)) return;
+		
+		Optional<SignBlockEntity> test_sign_opt = client.player.getWorld().getBlockEntity(sign_coord, BlockEntityType.SIGN);
+		
+		SignBlockEntity test_sign = test_sign_opt.orElse(null);
+			
+		if(test_sign == null) {
+			return;
+		}
+		
+		String line2 = test_sign.getFrontText().getMessage(1, false).getString().toLowerCase().trim();
+		String line4 = test_sign.getFrontText().getMessage(3, false).getString().toLowerCase().replace(">=", "").trim();
+		
+		StonkCompanionClient.latest_mod_version = line2;
+		StonkCompanionClient.mininum_mod_version = line4;	
+		
+		if(isCurrentVersionOlder(line2)) {
+			StonkCompanionClient.is_latest_version = false;
+		}
+		
+		if(isCurrentVersionOlder(line4)) {
+			StonkCompanionClient.is_stopping_mistrade_dect = true;
+		}
+		
+	}		
+	
+	private boolean isCurrentVersionOlder(String test_version) {
+		
+		if(!test_version.contains(".")) return false;
+		
+		String[] test_version_split = test_version.replace("v","").split("\\.");
+		String[] current_version_split = StonkCompanionClient.current_mod_version.replace("v", "").split("\\.");
+		
+		if(Integer.parseInt(test_version_split[0]) > Integer.parseInt(current_version_split[0])) {
+			return true;
+		}
+		
+		if(Integer.parseInt(test_version_split[1]) > Integer.parseInt(current_version_split[1])) {
+			return true;
+		}
+		
+		if(Integer.parseInt(test_version_split[2]) > Integer.parseInt(current_version_split[2])) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	private void splitLabel() {
@@ -109,6 +180,7 @@ public class Barrel {
 		}
 		
 		gui_height = 6 + client.textRenderer.fontHeight;
+		gui_height += StonkCompanionClient.is_latest_version ? 0 : client.textRenderer.fontHeight + 1;
 		
 		for(Text[] given_text_segment : gui_text) {
 			if(given_text_segment == null) continue;
@@ -130,7 +202,8 @@ public class Barrel {
 	}
 	
 	// For subclass usages. Since subclasses should override these if they have them, and all of them should have these 4 functions just different implementations.
-	public boolean validateTransaction() {return true;}
+	public boolean validateTransaction() { return true;
+		}
 	public void generateGuiText() {}
 	public void calulateFairPrice(List<Slot> items) {}
 	public void onClickActionAdd(String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {}
@@ -151,7 +224,7 @@ public class Barrel {
 	public void updateGuiTimestamp(){
 		
 		if(gui_text == null) return;
-		if(barrel_transactions.isEmpty()) {
+		if(barrel_transactions.isEmpty() || StonkCompanionClient.is_stopping_mistrade_dect) {
 			if(gui_text[2] != null) gui_text[2] = null;
 			return;
 		}

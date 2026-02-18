@@ -33,14 +33,12 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
-import net.stonkcompanion.suggestions.StonkCompanionCommandsSuggestions;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
@@ -61,6 +59,14 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	private static String top_dir = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion").toString();
 	
+	// Versioning:
+	public static String current_mod_version = "v0.1.0";
+	public static String latest_mod_version = "";
+	public static String mininum_mod_version = "";
+	public static boolean is_stopping_mistrade_dect = false;
+	public static boolean is_latest_version = true;
+	
+	
 	// Coreprotect changes. Like changing the hovertext literal to the monu item name.
 	public static boolean change_coreprotect = true;
 	
@@ -74,6 +80,11 @@ public class StonkCompanionClient implements ClientModInitializer{
 	
 	public static final Map<Integer, String> currency_type_to_compressed_text = Map.of(1, "cxp", 2, "ccs", 3, "ar");
 	public static final Map<Integer, String> currency_type_to_hyper_text = Map.of(1, "hxp", 2, "hcs", 3, "har");
+	public static final int yellow_color = 0xffffff00;
+	public static final int green_color = 0xff00ff00;
+	public static final int light_blue_color = 0xff00ffff;
+	public static final int coreprotect_gray_color = 0xffaaaaaa;
+	public static final MutableText stonk_companion_logo = Text.literal("Stonk").withColor(yellow_color).append(Text.literal("Co").withColor(green_color)).append(Text.literal("mpanion").withColor(light_blue_color));
 	
 	// In seconds how long verbose logging logs can exist.
 	// Set it to a week for rn.
@@ -1311,6 +1322,13 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    					return 1;
 	    				})
 	    		)
+	    )
+	    .then(ClientCommandManager.literal("clearreports")
+	    		.executes(context -> {
+	    			context.getSource().sendFeedback(Text.literal("[StonkCompanion] Clearing all transactions."));
+    				barrel_prices.clear();
+	    			return 1;
+	    		})
 	    )
 	    .then(ClientCommandManager.literal("showgui")
 	    		.executes(context -> {
