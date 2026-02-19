@@ -60,7 +60,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private static String top_dir = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion").toString();
 	
 	// Versioning:
-	public static String current_mod_version = "v0.1.0";
+	public static final String current_mod_version = "v0.1.0";
 	public static String latest_mod_version = "";
 	public static String mininum_mod_version = "";
 	public static boolean is_stopping_mistrade_dect = false;
