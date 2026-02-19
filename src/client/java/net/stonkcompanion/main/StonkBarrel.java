@@ -306,7 +306,7 @@ public class StonkBarrel extends Barrel {
 		double interpolated_compressed_amount = (Math.abs(interpolated_price)%64);	    
 		    
 		// TODO: Add label
-		String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(interpolated_price), currency_str, interpolated_hyper_amount, hyper_str, StonkCompanionClient.df1.format(interpolated_compressed_amount), currency_str);
+		String fairprice_msg = String.format("§7[§eStonk§aCo§bmpanion§7] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(interpolated_price), currency_str, interpolated_hyper_amount, hyper_str, StonkCompanionClient.df1.format(interpolated_compressed_amount), currency_str);
 		String fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(interpolated_price), currency_str);
 		
 		// Check for if there is not enough to actually do a trade.
@@ -317,11 +317,11 @@ public class StonkBarrel extends Barrel {
 		fairprice_dir = 0;
 		
 		if(demand_modifier <= 0.005) {
-			fairprice_msg = "[StonkCompanion] Look in lower barrel.";
+			fairprice_msg = "§7[§eStonk§aCo§bmpanion§7] Look in lower barrel.";
 			fairprice_gui_msg = "Look in lower barrel.";
 			fairprice_dir = -1;
 		}else if(demand_modifier >= 0.995) {
-		   	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
+		   	fairprice_msg = "§7[§eStonk§aCo§bmpanion§7] Look in higher barrel.";
 		   	fairprice_gui_msg = "Look in higher barrel.";
 		   	fairprice_dir = 1;
 		}		
@@ -333,12 +333,12 @@ public class StonkBarrel extends Barrel {
 		if(fairprice_dir != 0 && category.equals(previous_barrel_category)) {
 			if(fairprice_dir == 1 && previous_barrel_number == barrel_number-1 && previous_barrel_fairprice == -1) {
 				int ask_hyper_amount = (int)(Math.floor(Math.abs(compressed_ask_price)/64));
-				fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_ask_price), currency_str, ask_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_ask_price), currency_str);
+				fairprice_msg = String.format("§7[§eStonk§aCo§bmpanion§7] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_ask_price), currency_str, ask_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_ask_price), currency_str);
 				fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(compressed_ask_price), currency_str);
 			}
 			if(fairprice_dir == -1 && previous_barrel_number == barrel_number+1 && previous_barrel_fairprice == 1) {
 				int bid_hyper_amount = (int)(Math.floor(Math.abs(compressed_bid_price)/64));
-				fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_bid_price), currency_str, bid_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_bid_price), currency_str);
+				fairprice_msg = String.format("§7[§eStonk§aCo§bmpanion§7] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_bid_price), currency_str, bid_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_bid_price), currency_str);
 				fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(compressed_bid_price), currency_str);
 			}
 		}
@@ -366,7 +366,7 @@ public class StonkBarrel extends Barrel {
 			
 			StringBuilder build_mistrade_text = new StringBuilder();
 			
-			build_mistrade_text.append("---[StonkCompanion " + StonkCompanionClient.current_mod_version + "]---");
+			build_mistrade_text.append("§7---[§eStonk§aCo§bmpanion §a" + StonkCompanionClient.current_mod_version + "§7]---");
 			build_mistrade_text.append("\n§cStonkCompanion is out of date.");
 			build_mistrade_text.append("\nInstalled: {" + StonkCompanionClient.current_mod_version + "}");
 			build_mistrade_text.append("\nUpdate to {" + StonkCompanionClient.mininum_mod_version +"} or higher to re-enable mistrade checking.");
@@ -518,10 +518,10 @@ public class StonkBarrel extends Barrel {
 		StringBuilder build_mistrade_text = new StringBuilder();
 		
 		if(!StonkCompanionClient.is_latest_version) {
-			build_mistrade_text.append("[StonkCompanion] There is a newer version! " + StonkCompanionClient.latest_mod_version +"\n");
+			build_mistrade_text.append("§7[§eStonk§aCo§bmpanion§7] There is a newer version! §e" + StonkCompanionClient.latest_mod_version +"\n");
 		}
 		
-		build_mistrade_text.append("---[StonkCompanion " + StonkCompanionClient.current_mod_version + "]---");
+		build_mistrade_text.append("§7---[§eStonk§aCo§bmpanion §e" + StonkCompanionClient.current_mod_version + "§7]---");
 		build_mistrade_text.append("\n%s (%s)".formatted(label, coords));
 		build_mistrade_text.append("\nBuy: %s %s (%s)".formatted(StonkCompanionClient.df1.format(compressed_ask_price), currency_str, ask_price));
 		build_mistrade_text.append("\nSell: %s %s (%s)".formatted(StonkCompanionClient.df1.format(compressed_bid_price), currency_str, bid_price));
@@ -529,10 +529,10 @@ public class StonkBarrel extends Barrel {
 		build_mistrade_text.append("\n%s: %s %s (%d %s %s %s)".formatted((actual_compressed < 0) ? "Took" : "Paid", StonkCompanionClient.df1.format(Math.abs(actual_compressed)), currency_str, actual_hyper_amount, hyper_str, StonkCompanionClient.df1.format(actual_compressed_amount), currency_str));
 		if(other_items!=0) build_mistrade_text.append("\nUnit Price: %s".formatted(StonkCompanionClient.df1.format(Math.abs(actual_compressed / (other_items)))));
 		if(barrel_transaction_validity) build_mistrade_text.append("\nValid Transaction");
-		if(!barrel_transaction_validity) build_mistrade_text.append("\n§cMistrade Detected§r");
+		if(!barrel_transaction_validity) build_mistrade_text.append("\n§cMistrade Detected");
 		if(currency_delta != 0) build_mistrade_text.append("\nCorrection amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str, corrective_hyper_amount, hyper_str, StonkCompanionClient.df1.format(corrective_compressed_amount), currency_str));
 		if(mats_delta != 0) build_mistrade_text.append("\n(OR) Correction amount: %s %d mats".formatted(correction_dir, Math.abs(mats_delta)));
-		build_mistrade_text.append("\nTime since last log: %ds/%ds".formatted(time_since_last_movement/20, transaction_lifetime/20));
+		build_mistrade_text.append("\n§7Time since last log: %ds/%ds".formatted(time_since_last_movement/20, transaction_lifetime/20));
 		if(wrong_currency) build_mistrade_text.append("\nWrong currency was used!");
 		build_mistrade_text.append("\n--------------------");
 		

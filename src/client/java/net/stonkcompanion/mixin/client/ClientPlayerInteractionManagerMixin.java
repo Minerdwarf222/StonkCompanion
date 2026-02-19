@@ -735,108 +735,13 @@ public class ClientPlayerInteractionManagerMixin {
 		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
 		
 		StonkCompanionClient.barrel_prices.get(barrel_pos).validateTransaction();
-		/*if (StonkCompanionClient.barrel_actions.get(barrel_pos) == null) return;
 		
-		Barrel traded_barrel = StonkCompanionClient.barrel_prices.get(barrel_pos);
-		double other_items = StonkCompanionClient.barrel_actions.get(barrel_pos)[0];
-		double actual_compressed = StonkCompanionClient.barrel_actions.get(barrel_pos)[1];
-		
-		double expected_compressed = (other_items < 0) ? Math.abs(other_items)*traded_barrel.compressed_ask_price : -1*other_items*traded_barrel.compressed_bid_price;
-		
-	    double currency_delta = expected_compressed - actual_compressed;
-	    
-	    String currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(traded_barrel.currency_type);
-	    String hyper_str = StonkCompanionClient.currency_type_to_hyper_text.get(traded_barrel.currency_type);
-	    
-	    // Bounds check.
-	    if(currency_delta < 0.0005 && currency_delta > -0.0005) currency_delta = 0;
-
-	    if(currency_delta == 0) {
-	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, true);
-	    	StonkCompanionClient.barrel_transaction_solution.remove(barrel_pos);
-	    }else if(currency_delta != 0) {
-	    	StonkCompanionClient.barrel_transaction_validity.put(barrel_pos, false);	
-	    	double abs_currency_delta = Math.abs(currency_delta);
-	    	// TODO: Turn this into an array of two strings.
-	    	if(StonkCompanionClient.is_compressed_only) {
-		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %s %s".formatted(currency_delta<0 ? "Take" : "Add", StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_str));	
-	    	}else {
-		    	StonkCompanionClient.barrel_transaction_solution.put(barrel_pos, "%s %d %s %s %s".formatted(currency_delta<0 ? "Take" : "Add", (int)(abs_currency_delta/64), hyper_str, StonkCompanionClient.df1.format(abs_currency_delta%64), currency_str));
-	    	}
-	    }*/
 	}
 	
 	private void onClickActionAdd(String barrel_pos, String taken_item_name, int item_qty_taken, String put_item_name, int item_qty_put) {
 		
 		if (StonkCompanionClient.barrel_prices.get(barrel_pos) == null) return;
 		StonkCompanionClient.barrel_prices.get(barrel_pos).onClickActionAdd(taken_item_name, item_qty_taken, put_item_name, item_qty_put);
-		
-		/*int currency_type = StonkCompanionClient.barrel_prices.get(barrel_pos).currency_type;
-		String label = StonkCompanionClient.barrel_prices.get(barrel_pos).label;
-		
-		if(StonkCompanionClient.barrel_actions.get(barrel_pos) == null) {
-			StonkCompanionClient.barrel_actions.put(barrel_pos, new double[]{0.0, 0.0});
-		}
-		
-		double[] barrel_actions = StonkCompanionClient.barrel_actions.get(barrel_pos);
-		
-		if(item_qty_taken != 0) {
-			String taken_item_name_lc = taken_item_name.toLowerCase();
-			
-			if(currency_type==1 && taken_item_name_lc.equals("hyperexperience")) {
-				barrel_actions[1] -= 64*item_qty_taken;
-			}else if(currency_type==1 && taken_item_name_lc.equals("concentrated experience")) {
-				barrel_actions[1] -= item_qty_taken;
-			}else if(currency_type==1 && taken_item_name_lc.equals("experience bottle")) {
-				barrel_actions[1] -= (double)(item_qty_taken)/8.0;
-			}else if(currency_type==2 && taken_item_name_lc.equals("hyper crystalline shard")) {
-				barrel_actions[1] -= 64*item_qty_taken;
-			}else if(currency_type==2 && taken_item_name_lc.equals("compressed crystalline shard")) {
-				barrel_actions[1] -= item_qty_taken;
-			}else if(currency_type==2 && taken_item_name_lc.equals("crystalline shard")) {
-				barrel_actions[1] -= (double)(item_qty_taken)/8.0;
-			}else if(currency_type==3 && taken_item_name_lc.equals("hyperchromatic archos ring")) {
-				barrel_actions[1] -= 64*item_qty_taken;
-			}else if(currency_type==3 && taken_item_name_lc.equals("archos ring")) {
-				barrel_actions[1] -= item_qty_taken;
-			}else {
-				
-				if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
-					barrel_actions[0] -= (double)(item_qty_taken)/64.0;
-				}else {
-					barrel_actions[0] -= item_qty_taken;
-				}
-			}
-		}
-		
-		if(item_qty_put != 0) {
-			String taken_item_name_lc = put_item_name.toLowerCase();
-					
-			if(currency_type==1 && taken_item_name_lc.equals("hyperexperience")) {
-				barrel_actions[1] += 64*item_qty_put;
-			}else if(currency_type==1 && taken_item_name_lc.equals("concentrated experience")) {
-				barrel_actions[1] += item_qty_put;
-			}else if(currency_type==1 && taken_item_name_lc.equals("experience bottle")) {
-				barrel_actions[1] += (double)(item_qty_put)/8.0;
-			}else if(currency_type==2 && taken_item_name_lc.equals("hyper crystalline shard")) {
-				barrel_actions[1] += 64*item_qty_put;
-			}else if(currency_type==2 && taken_item_name_lc.equals("compressed crystalline shard")) {
-				barrel_actions[1] += item_qty_put;
-			}else if(currency_type==2 && taken_item_name_lc.equals("crystalline shard")) {
-				barrel_actions[1] += (double)(item_qty_put)/8.0;
-			}else if(currency_type==3 && taken_item_name_lc.equals("hyperchromatic archos ring")) {
-				barrel_actions[1] += 64*item_qty_put;
-			}else if(currency_type==3 && taken_item_name_lc.equals("archos ring")) {
-				barrel_actions[1] += item_qty_put;
-			}else {
-				
-				if(label.toLowerCase().startsWith("64x") || label.toLowerCase().contains("stack")) {
-					barrel_actions[0] += (double)(item_qty_put)/64.0;
-				}else {
-					barrel_actions[0] += item_qty_put;
-				}
-			}
-		}*/
 		
 	}
 	

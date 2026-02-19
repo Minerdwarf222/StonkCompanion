@@ -288,7 +288,7 @@ public class ForexBarrel extends Barrel {
 		    String currency_two = StonkCompanionClient.currency_type_to_hyper_text.get(curr_two_type);
 
 		    fairprice_text_message = String.format(
-		      "[StonkCompanion] %s's FairStonk is:\n1 %s -> %s %s\n1 %s -> %s %s", 
+		      "§7[§eStonk§aCo§bmpanion§7] %s's FairStonk is:\n1 %s -> %s %s\n1 %s -> %s %s", 
 		      StonkCompanionClient.categoreyMaker(label), 
 		      currency_one,
 		      StonkCompanionClient.df1.format(interpolated_price), 
@@ -315,21 +315,21 @@ public class ForexBarrel extends Barrel {
 
 		    if(demand_modifier <= 0.005) {
 		    	if(curr_one_type == 2) {
-		    		fairprice_text_message = "[StonkCompanion] Look in lower barrel.";
+		    		fairprice_text_message = "§7[§eStonk§aCo§bmpanion§7] Look in lower barrel.";
 		    		fairprice_gui_message = "Look in lower barrel.";
 		    		fairprice_dir = -1;
 		    	}else {
-		    		fairprice_text_message = "[StonkCompanion] Look in higher barrel.";
+		    		fairprice_text_message = "§7[§eStonk§aCo§bmpanion§7] Look in higher barrel.";
 		    		fairprice_gui_message = "Look in higher barrel.";
 		    		fairprice_dir = 1;
 		    	}
 		    }else if(demand_modifier >= 0.995) {
 		    	if(curr_one_type == 2) {
-		    		fairprice_text_message = "[StonkCompanion] Look in higher barrel.";
+		    		fairprice_text_message = "§7[§eStonk§aCo§bmpanion§7] Look in higher barrel.";
 		    		fairprice_gui_message = "Look in higher barrel.";
 		    		fairprice_dir= 1;
 		    	}else {
-		    		fairprice_text_message = "[StonkCompanion] Look in lower barrel.";
+		    		fairprice_text_message = "§7[§eStonk§aCo§bmpanion§7] Look in lower barrel.";
 		    		fairprice_gui_message = "Look in lower barrel.";  
 		    		fairprice_dir = -1;
 		    	}
@@ -356,7 +356,7 @@ public class ForexBarrel extends Barrel {
 			
 			StringBuilder build_mistrade_text = new StringBuilder();
 			
-			build_mistrade_text.append("---[StonkCompanion " + StonkCompanionClient.current_mod_version + "]---");
+			build_mistrade_text.append("§7---[§eStonk§aCo§bmpanion §a" + StonkCompanionClient.current_mod_version + "§7]---");
 			build_mistrade_text.append("\n§cStonkCompanion is out of date.");
 			build_mistrade_text.append("\nInstalled: {" + StonkCompanionClient.current_mod_version + "}");
 			build_mistrade_text.append("\nUpdate to {" + StonkCompanionClient.mininum_mod_version +"} or higher to re-enable mistrade checking.");
@@ -549,20 +549,20 @@ public class ForexBarrel extends Barrel {
 		double corrective_compressed_amount = (Math.abs(currency_delta)%64);
 		
 		if(!StonkCompanionClient.is_latest_version) {
-			build_mistrade_text.append("[StonkCompanion] There is a newer version! " + StonkCompanionClient.latest_mod_version +"\n");
+			build_mistrade_text.append("§7[§eStonk§aCo§bmpanion§7] There is a newer version! §e" + StonkCompanionClient.latest_mod_version +"\n");
 		}
 		
-		build_mistrade_text.append("---[StonkCompanion " + StonkCompanionClient.current_mod_version + "]---");
+		build_mistrade_text.append("§7---[§eStonk§aCo§bmpanion §e" + StonkCompanionClient.current_mod_version + "§7]---");
 		build_mistrade_text.append("\n%s (%s)".formatted(label, coords));
 		build_mistrade_text.append("\n%s".formatted(curr_one_str));
 		build_mistrade_text.append("\n%s".formatted(curr_two_str));
 		build_mistrade_text.append("\n%s: %s %s (%d %s %s %s)".formatted((currency_one < 0) ? "Took" : "Paid", StonkCompanionClient.df1.format(Math.abs(currency_one)), currency_one_str, (int)(Math.floor(Math.abs(currency_one)/64)), hyper_one_str, Math.abs(currency_one)%64, currency_one_str));
 		build_mistrade_text.append("\n%s: %s %s (%d %s %s %s)".formatted((currency_two < 0) ? "Took" : "Paid", StonkCompanionClient.df1.format(Math.abs(currency_two)), currency_two_str, (int)(Math.floor(Math.abs(currency_two)/64)), hyper_two_str, Math.abs(currency_two)%64, currency_two_str));
 		if(barrel_transaction_validity) build_mistrade_text.append("\nValid Transaction");
-		if(!barrel_transaction_validity) build_mistrade_text.append("\n§cMistrade Detected§r");
+		if(!barrel_transaction_validity) build_mistrade_text.append("\n§cMistrade Detected");
 		if(full_hyper_owed != 0) build_mistrade_text.append("\nCorrection amount: %s %s %s (%d %s %s %s)".formatted((full_hyper_owed < 0) ? "Take out" : "Put in", StonkCompanionClient.df1.format(Math.abs(full_hyper_owed)), currency_corrective_str, (int)(Math.floor(Math.abs(full_hyper_owed)/64)), hyper_corrective_str, StonkCompanionClient.df1.format((Math.abs(full_hyper_owed)%64)), currency_corrective_str));
 		if(currency_delta != 0) build_mistrade_text.append("\nCorrection amount: %s %s %s (%d %s %s %s)".formatted(correction_dir, StonkCompanionClient.df1.format(Math.abs(currency_delta)), currency_corrective_str, corrective_hyper_amount, hyper_corrective_str, StonkCompanionClient.df1.format(corrective_compressed_amount), currency_corrective_str));
-		build_mistrade_text.append("\nTime since last log: %ds/%ds".formatted(time_since_last_movement/20, transaction_lifetime/20));
+		build_mistrade_text.append("\n§7Time since last log: %ds/%ds".formatted(time_since_last_movement/20, transaction_lifetime/20));
 		if(wrong_currency) build_mistrade_text.append("\nWrong currency was used!");
 		build_mistrade_text.append("\n--------------------");
 		

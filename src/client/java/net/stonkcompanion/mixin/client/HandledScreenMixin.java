@@ -225,84 +225,6 @@ public class HandledScreenMixin {
 		
 	    if(StonkCompanionClient.is_showing_text && !closing_barrel.fairprice_text_message.isBlank()) mc.player.sendMessage(Text.literal(closing_barrel.fairprice_text_message));
 	    
-	    /*
-		String[] fair_price_results = StonkCompanionClient.detectFairPrice(items);
-		if (fair_price_results == null) return;
-		double interpolated_price = Double.parseDouble(fair_price_results[0]);
-		int currency_type = (int)Double.parseDouble(fair_price_results[1]);
-		double demand_modifier = Double.parseDouble(fair_price_results[2]);
-		String label = fair_price_results[3];
-		
-	    if (currency_type < 0) {
-	    	// forex type
-	    	
-	    	String currency_one = "";
-	    	String currency_two = "";
-	    	
-		    if (currency_type == -1) {
-		    	currency_one = "hxp";
-		       	currency_two = "hcs";
-		    }else if(currency_type == -2) {
-		    	currency_one = "hxp";
-		      	currency_two = "har";
-		    }else if(currency_type == -3) {
-		    	currency_one = "hcs";
-		       	currency_two = "har";
-		    }
-
-		    String fairprice_msg = String.format(
-		    	"[StonkCompanion] %s's FairStonk is:\n1 %s -> %s %s\n1 %s -> %s %s", 
-		    	StonkCompanionClient.categoreyMaker(label), 
-		    	currency_one,
-		    	StonkCompanionClient.df1.format(interpolated_price), 
-		    	currency_two,
-		    	currency_two,
-		    	StonkCompanionClient.df1.format(1/interpolated_price),
-		    	currency_one
-
-		    );
-		    if(StonkCompanionClient.is_showing_text) {
-		        if(demand_modifier <= 0.005) {
-		        	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
-		        }else if(demand_modifier >= 0.995) {
-		        	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
-		        }
-		        
-		        mc.player.sendMessage(Text.literal(fairprice_msg));
-		    }
-	    } else {
-
-		    String currency_str = StonkCompanionClient.currency_type_to_compressed_text.get(currency_type);
-		    String hyper_str = StonkCompanionClient.currency_type_to_hyper_text.get(currency_type);
-
-		    if (currency_type == 1) {
-		    	hyper_str = "hxp";
-		       	currency_str = "cxp";
-		    }else if(currency_type == 2) {
-		    	hyper_str = "hcs";
-		      	currency_str = "ccs";
-		    }else if(currency_type == 3) {
-		    	hyper_str = "har";
-		       	currency_str = "ar";
-		    }
-
-			int interpolated_hyper_amount = (int)(Math.floor(Math.abs(interpolated_price)/64));
-			double interpolated_compressed_amount = (Math.abs(interpolated_price)%64);	    
-		    
-		    // TODO: Add label
-		    String fairprice_msg = String.format("[StonkCompanion] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(interpolated_price), currency_str, interpolated_hyper_amount, hyper_str, StonkCompanionClient.df1.format(interpolated_compressed_amount), currency_str);
-		    
-		    if(StonkCompanionClient.is_showing_text) {
-		        if(demand_modifier <= 0.005) {
-		        	fairprice_msg = "[StonkCompanion] Look in lower barrel.";
-		        }else if(demand_modifier >= 0.995) {
-		        	fairprice_msg = "[StonkCompanion] Look in higher barrel.";
-		        }
-		        
-		        mc.player.sendMessage(Text.literal(fairprice_msg));
-		    }
-	    }
-	    */
 	}
 
 		
@@ -360,7 +282,7 @@ public class HandledScreenMixin {
 		if (StonkCompanionClient.open_barrel_values.isBlank() || !barrel_inventory.toString().equals(StonkCompanionClient.open_barrel_values)) {
 			StonkCompanionClient.open_barrel_time = 0;
 			StonkCompanionClient.open_barrel_values = "";
-			mc.player.sendMessage(Text.literal(String.format("[StonkCompanion] The barrel at x%d/y%d/z%d failed to be checkpointed.", barrelx, barrely, barrelz)));
+			mc.player.sendMessage(Text.literal(String.format("§7[§eStonk§aCo§bmpanion§7] §cThe barrel at x%d/y%d/z%d failed to be checkpointed.", barrelx, barrely, barrelz)));
 			return;
 		}
 		
@@ -388,7 +310,7 @@ public class HandledScreenMixin {
 		}
 		
 
-        mc.player.sendMessage(Text.literal("[StonkCompanion] Grabbed checkpoint for %s.".formatted(barrel_pos)));
+        mc.player.sendMessage(Text.literal("§7[§eStonk§aCo§bmpanion§7] Grabbed checkpoint for %s.".formatted(barrel_pos)));
 		
 		StonkCompanionClient.open_barrel_time = 0;
 		StonkCompanionClient.open_barrel_values = "";

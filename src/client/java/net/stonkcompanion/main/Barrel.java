@@ -81,7 +81,9 @@ public class Barrel {
 		BlockEntity test_block_entity = client.player.getWorld().getBlockEntity(sign_coord);
 		
 		if(test_block_entity == null) return;		
-			
+		
+		// TODO: Maybe instead of just returning here, also set latest and min version to current.
+		// As if there is no sign, then no reason to keep checking every barrel imo.
 		if(!test_block_entity.getType().equals(BlockEntityType.SIGN)) return;
 		
 		Optional<SignBlockEntity> test_sign_opt = client.player.getWorld().getBlockEntity(sign_coord, BlockEntityType.SIGN);
@@ -112,20 +114,67 @@ public class Barrel {
 		
 		if(!test_version.contains(".")) return false;
 		
-		String[] test_version_split = test_version.replace("v","").split("\\.");
-		String[] current_version_split = StonkCompanionClient.current_mod_version.replace("v", "").split("\\.");
+		String[] test_version_bugfix_strs = test_version.replace("v","").split("-");
+		String[] current_version_bugfix_strs = StonkCompanionClient.current_mod_version.replace("v", "").split("-");
 		
-		if(Integer.parseInt(test_version_split[0]) > Integer.parseInt(current_version_split[0])) {
+		String[] test_version_split = test_version_bugfix_strs[0].split("\\.");
+		String[] current_version_split = current_version_bugfix_strs[0].split("\\.");
+		
+		try {		
+			int test_version_major = Integer.parseInt(test_version_split[0]);
+			int current_version_major = Integer.parseInt(current_version_split[0]);
+			
+			if(test_version_major > current_version_major) {
+				return true;
+			}
+			
+			if(current_version_major > test_version_major) {
+				return false;
+			}
+			
+		} catch (NumberFormatException e) {
+			StonkCompanionClient.LOGGER.error("A version major was not an integer! Test Version: " + test_version + " Current Version:"  + StonkCompanionClient.current_mod_version);
+			return false;
+		}
+		
+		try {		
+			int test_version_minor = Integer.parseInt(test_version_split[1]);
+			int current_version_minor = Integer.parseInt(current_version_split[1]);
+			
+			if(test_version_minor > current_version_minor) {
+				return true;
+			}
+			
+			if(current_version_minor > test_version_minor) {
+				return false;
+			}
+			
+		} catch (NumberFormatException e) {
+			StonkCompanionClient.LOGGER.error("A version minor was not an integer! Test Version: " + test_version + " Current Version:"  + StonkCompanionClient.current_mod_version);
+			return false;
+		}
+		
+		try {		
+			int test_version_bugfix = Integer.parseInt(test_version_split[2]);
+			int current_version_bugfix = Integer.parseInt(current_version_split[2]);
+			
+			if(test_version_bugfix > current_version_bugfix) {
+				return true;
+			}
+			
+			if(current_version_bugfix > test_version_bugfix) {
+				return false;
+			}
+			
+		} catch (NumberFormatException e) {
+			StonkCompanionClient.LOGGER.error("A version bugfix was not an integer! Test Version: " + test_version + " Current Version:"  + StonkCompanionClient.current_mod_version);
+			return false;
+		}	
+		
+		if(current_version_bugfix_strs.length == 2) {
 			return true;
 		}
 		
-		if(Integer.parseInt(test_version_split[1]) > Integer.parseInt(current_version_split[1])) {
-			return true;
-		}
-		
-		if(Integer.parseInt(test_version_split[2]) > Integer.parseInt(current_version_split[2])) {
-			return true;
-		}
 		
 		return false;
 	}
