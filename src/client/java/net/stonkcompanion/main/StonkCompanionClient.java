@@ -21,8 +21,6 @@
 
 package net.stonkcompanion.main;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -108,7 +106,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	public static final MutableText stonk_companion_logo = Text.literal("Stonk").withColor(yellow_color).append(Text.literal("Co").withColor(green_color)).append(Text.literal("mpanion").withColor(light_blue_color));
 	
 	// In seconds how long verbose logging logs can exist.
-	// Set it to a week for rn.
+	// Set it to a week for right now. 
 	public static int action_lifetime_seconds = 60*60*24*7;
 	public static ArrayList<String> action_buffer = new ArrayList<String>();
 	public static String potential_action_log = "";
@@ -219,7 +217,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 				if(!interaction_log_file.exists()) {
 					try {
 						interaction_log_file.createNewFile();
-						StonkCompanionClient.action_buffer.add(0,"(Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)\n");
+						// StonkCompanionClient.action_buffer.add(0,"(Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)\n");
 					} catch (IOException e) {
 						// e.printStackTrace();
 						StonkCompanionClient.LOGGER.error("StonkCompanioned attempted to create file but failed. " + barrel_pos);
@@ -663,7 +661,13 @@ public class StonkCompanionClient implements ClientModInitializer{
 				}
 				
 				if(test_obj.has("action_lifetime_seconds")) {
-					action_lifetime_seconds = test_obj.get("action_lifetime_seconds").getAsInt();
+					int _a_l_s = test_obj.get("action_lifetime_seconds").getAsInt();
+					
+					if(_a_l_s < 0 || _a_l_s > 60*60*24*30) {
+						_a_l_s = 60*60*24*7;
+					}
+					
+					action_lifetime_seconds = _a_l_s;
 				}
 
 			} catch (IOException e) {
@@ -805,7 +809,9 @@ public class StonkCompanionClient implements ClientModInitializer{
 						
 						if(!skipped_header) {
 							skipped_header = true;
-							continue;
+							if(log_line.startsWith("(Timestamp")) {
+								continue;
+							}							
 						}
 						
 						if(bw != null && found_valid_timestamp) {
@@ -842,7 +848,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 						}
 						
 						// Re-add header since file is being rewritten.
-						bw.write("(Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)\n");
+						// bw.write("(Timestamp, Barrel, Inventory Type, Slot Number, Button, Action, In Cursor, Below Cursor)\n");
 						bw.write(log_line+"\n");
 						
 					}
@@ -1314,7 +1320,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 		.then(ClientCommandManager.literal("actionlogs")
 				.executes(context -> {
 					context.getSource().sendFeedback(Text.literal("§7[§eStonk§aCo§bmpanion§7] Actionlogs are being " + (is_verbose_logging ? "tracked" : "not tracked") +"."));
-					context.getSource().sendFeedback(Text.literal("§7[§eStonk§aCo§bmpanion§7] Actionlogs are stored in config/StonkCompanion/interaction_logs."));					
+					context.getSource().sendFeedback(Text.literal("§7[§eStonk§aCo§bmpanion§7] Actionlogs are stored in config/StonkCompanion/interaction_logs."));			
 					context.getSource().sendFeedback(Text.literal("§7[§eStonk§aCo§bmpanion§7] Actionlogs are stored for "+ action_lifetime_seconds/60/60/24 +" days before being pruned."));
 					return 1;
 				})
@@ -1340,12 +1346,13 @@ public class StonkCompanionClient implements ClientModInitializer{
 						})
 				)
 				.then(ClientCommandManager.literal("max_age")
-						.then(argument("given_days", IntegerArgumentType.integer(1, 30)))
+						.then(ClientCommandManager.argument("given_days", IntegerArgumentType.integer(1, 30))
 							.executes(context -> {
 								int given_days = IntegerArgumentType.getInteger(context, "given_days");
+								context.getSource().sendFeedback(Text.literal("§7[§eStonk§aCo§bmpanion§7] Set actionlog lifetime to " + given_days + " days."));
 								action_lifetime_seconds = given_days*24*60*60;	
 								return 1;
-							})
+							}))
 				)
 	    )
 		);
