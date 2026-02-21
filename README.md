@@ -1,2 +1,2 @@
 # StonkCompanion
-StonkCompanion is a monumenta mod to help the players in playermarket.
+A collection of utilities created by StonkCo's R&D department, designed to improve your experience in the Monumenta player market.
