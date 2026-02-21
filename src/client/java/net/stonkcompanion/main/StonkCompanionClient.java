@@ -1,3 +1,24 @@
+
+/*
+ * 
+ *  Copyright (C) 2026  minerdwarf222
+
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+
 package net.stonkcompanion.main;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
@@ -1065,13 +1086,6 @@ public class StonkCompanionClient implements ClientModInitializer{
 	    					return 1;
 	    				})
 	    		)
-	    )
-	    .then(ClientCommandManager.literal("clearreports")
-	    		.executes(context -> {
-	    			context.getSource().sendFeedback(Text.literal("§7[§eStonk§aCo§bmpanion§7] Clearing all transactions."));
-    				barrel_prices.clear();
-	    			return 1;
-	    		})
 	    )
 	    .then(ClientCommandManager.literal("showgui")
 	    		.executes(context -> {

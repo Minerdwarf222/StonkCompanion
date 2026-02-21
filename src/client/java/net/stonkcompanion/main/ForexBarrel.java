@@ -183,7 +183,7 @@ public class ForexBarrel extends Barrel {
 				gui_text[2][1] = Text.literal("Refund period ends in: %d:%02d".formatted((int)time_left/60, time_left%60));
 			}
 				
-			gui_text[3][0] = barrel_transaction_validity ? Text.literal("Valid Trade").formatted(Formatting.BOLD) : Text.literal("Invalid Trade").formatted(Formatting.BOLD);
+			gui_text[3][0] = barrel_transaction_validity ? Text.literal("Valid Trade").formatted(Formatting.BOLD) : Text.literal("Invalid Trade").formatted(Formatting.BOLD).withColor(light_red_color);
 		}else {
 			gui_text[2][0] = null;
 			gui_text[2][1] = null;
@@ -210,7 +210,7 @@ public class ForexBarrel extends Barrel {
 			
 		if(!barrel_transaction_validity) {
 			gui_text[4][0] = Text.literal("If this report is in error, type:");
-			gui_text[4][1] = Text.literal("/stonkcompanion clearreports");
+			gui_text[4][1] = Text.literal("/sc mistrades clear");
 		}else {
 			gui_text[4][0] = null;
 			gui_text[4][1] = null;
