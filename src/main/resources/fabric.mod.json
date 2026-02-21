@@ -3,7 +3,7 @@
 	"id": "stonkcompanion",
 	"version": "${version}",
 	"name": "Stonk Companion",
-	"description": "A collection of utilities created by StonkCo's R&D branch, designed to improve your experience in the Monumenta player market.",
+	"description": "A collection of utilities and quality-of-life features created by StonkCo, designed to improve your experience in the Monumenta player market.",
 	"authors": [
 		"minerdwarf222"
 	],
