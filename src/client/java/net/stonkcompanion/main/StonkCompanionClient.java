@@ -1255,7 +1255,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 				.then(ClientCommandManager.literal("off")
 						.executes(context -> {
 							context.getSource().sendFeedback(Text.literal("§7[§eStonk§aCo§bmpanion§7] Stopped getting checkpoints."));
-			    			if(!checkpointing) {
+			    			if(checkpointing) {
 			    				writeCheckpoints();
 			    			}
 							checkpointing = false;	
