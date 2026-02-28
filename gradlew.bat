@@ -39,7 +39,7 @@ set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
 @rem Find java.exe
 if defined JAVA_HOME goto findJavaFromJavaHome
 
-set JAVA_EXE=java.exe
+set JAVA_EXE=D:\MinecraftModing\JRE\openlogic-openjdk-jre-17.0.10+7-windows-x64\bin\java.exe
 %JAVA_EXE% -version >NUL 2>&1
 if %ERRORLEVEL% equ 0 goto execute
 
@@ -53,7 +53,7 @@ goto fail
 
 :findJavaFromJavaHome
 set JAVA_HOME=%JAVA_HOME:"=%
-set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+set JAVA_EXE=D:\MinecraftModing\JRE\openlogic-openjdk-jre-17.0.10+7-windows-x64\bin\java.exe
 
 if exist "%JAVA_EXE%" goto execute
 

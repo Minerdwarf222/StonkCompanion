@@ -807,6 +807,24 @@ public class StonkCompanionClient implements ClientModInitializer{
 					
 					while ((log_line = br.readLine()) != null) {
 						
+						if(log_line.isBlank()) {
+							LOGGER.error("Action log is blank in "+ barrel_verbose_log.getName() +". This should not happen.");
+							
+							bw = null;
+							
+							break;
+						}
+						
+						if(log_line.indexOf(',') == -1) {
+							
+							LOGGER.error("Action log missing comma in "+ barrel_verbose_log.getName() +". This should not happen.");
+							LOGGER.error("Log Line: " + log_line);
+							
+							bw = null;
+							
+							break;
+						}
+						
 						if(!skipped_header) {
 							skipped_header = true;
 							if(log_line.startsWith("(Timestamp")) {
