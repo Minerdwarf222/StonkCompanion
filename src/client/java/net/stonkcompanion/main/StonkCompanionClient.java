@@ -612,11 +612,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 		try (FileWriter writer = new FileWriter(top_dir+"/StonkCompanionConfig.json")){
 			Gson gson = new GsonBuilder().create();
 			gson.toJson(config_stuff, writer);
-			config_stuff = new JsonObject();
+			writer.flush();
 		} catch (IOException e) {
 			LOGGER.error("StonkCompanion failed to create the config json!");
 		}
-		
 	}
 	
 	private void readConfig() {
@@ -625,6 +624,11 @@ public class StonkCompanionClient implements ClientModInitializer{
 		if(test_for_json.exists()) {
 
 			try {
+				
+				if(!JsonParser.parseString(Files.readString(Paths.get(top_dir+"/StonkCompanionConfig.json"))).isJsonObject()) {
+					LOGGER.error("The config file is not a valid json object?");
+					return;
+				}
 
 				JsonObject test_obj = JsonParser.parseString(Files.readString(Paths.get(top_dir+"/StonkCompanionConfig.json"))).getAsJsonObject();
 
@@ -674,6 +678,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 
 				LOGGER.error("Could not find or read json config file.");
 
+			} catch (IllegalStateException e) {
+				
+				LOGGER.error("Illegal State Detected: " + e.getMessage());
+				
 			}
 		}
 	}
