@@ -85,7 +85,7 @@ public class TransactionWidget extends AbstractParentElement implements Drawable
 		int light_blue_color = 0xff00ffff;
 		
 		if (!StonkCompanionClient.is_latest_version) {
-			draw_context.drawCenteredTextWithShadow(client.textRenderer, "Latest Version: " + StonkCompanionClient.latest_mod_version, (int)dimension.getCenterX(), dimension.y+y_diff_text, yellow_color);
+			draw_context.drawCenteredTextWithShadow(client.textRenderer, "Update Available: " + StonkCompanionClient.latest_mod_version, (int)dimension.getCenterX(), dimension.y+y_diff_text, yellow_color);
 			y_diff_text += font_height + 1;
 		}
 		
