@@ -26,7 +26,9 @@ import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.stonkcompanion.main.StonkCompanionClient;
 import net.stonkcompanion.main.Barrel;
+import net.stonkcompanion.main.BuyBarrel;
 import net.stonkcompanion.main.ForexBarrel;
+import net.stonkcompanion.main.SellBarrel;
 import net.stonkcompanion.main.StonkBarrel;
 
 @Environment(EnvType.CLIENT)
@@ -425,7 +427,7 @@ public class ClientPlayNetworkMixin {
 						}
 						
 						// Break if we have found the sign. Assuming the first found correctly formatted sign is the correct sign. If it isn't. User error.
-						if (currency_type != -1 && ask_price_compressed != -1 && bid_price_compressed != -1) {
+						if (currency_type != -1 && (ask_price_compressed != -1 || bid_price_compressed != -1)) {
 							break;
 						}
 					}
@@ -434,13 +436,30 @@ public class ClientPlayNetworkMixin {
 			
 			// StonkCompanionClient.LOGGER.info("Checked Barrel: " + currency_type + " " + ask_price_compressed + " " + bid_price_compressed);
 			
-			if (currency_type == -1 || ask_price_compressed == -1 || bid_price_compressed == -1) {
+			if (currency_type == -1) {
 				/*
 				 *     rat        _..----.._    _
             	 * 				.'  .--.    "-.(0)_
 				 * '-.__.-'"'=:|   ,  _)_ \__ . c\'-..
              	 *    			'''------'---''---'-"
 				 */
+			} else if (ask_price_compressed == -1 || bid_price_compressed == -1){
+				// Barrel is either buy only or sell only.
+				
+				if(ask_price_compressed == -1) {
+					StonkCompanionClient.barrel_prices.putIfAbsent(barrel_pos, new SellBarrel(label, barrel_pos, bid_price, bid_price_compressed, currency_type));
+				} else if(bid_price_compressed == -1) {
+					StonkCompanionClient.barrel_prices.putIfAbsent(barrel_pos, new BuyBarrel(label, barrel_pos, ask_price, ask_price_compressed, currency_type));
+				}
+				
+				if(StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
+					StonkCompanionClient.barrel_prices.get(barrel_pos).generateGuiText();
+				}
+				
+				StonkCompanionClient.barrel_pos_found = barrel_pos;
+				
+				if(StonkCompanionClient.action_been_done) checkIfDesync(list_of_slots);
+				
 			}else {	
 				// Current assumption. Barrel doesn't change.
 				if(!StonkCompanionClient.barrel_prices.containsKey(barrel_pos)) {
