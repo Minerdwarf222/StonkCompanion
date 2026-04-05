@@ -334,12 +334,12 @@ public class StonkBarrel extends Barrel {
 		if(fairprice_dir != 0 && category.equals(previous_barrel_category)) {
 			if(fairprice_dir == 1 && previous_barrel_number == barrel_number-1 && previous_barrel_fairprice == -1) {
 				int ask_hyper_amount = (int)(Math.floor(Math.abs(compressed_ask_price)/64));
-				fairprice_msg = String.format("§7[§eStonk§aCo§bmpanion§7] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_ask_price), currency_str, ask_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_ask_price), currency_str);
+				fairprice_msg = String.format("§7[§eStonk§aCo§bmpanion§7] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_ask_price), currency_str, ask_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_ask_price%64), currency_str);
 				fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(compressed_ask_price), currency_str);
 			}
 			if(fairprice_dir == -1 && previous_barrel_number == barrel_number+1 && previous_barrel_fairprice == 1) {
 				int bid_hyper_amount = (int)(Math.floor(Math.abs(compressed_bid_price)/64));
-				fairprice_msg = String.format("§7[§eStonk§aCo§bmpanion§7] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_bid_price), currency_str, bid_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_bid_price), currency_str);
+				fairprice_msg = String.format("§7[§eStonk§aCo§bmpanion§7] %s's FairStonk is %s %s (%d %s %s %s).", StonkCompanionClient.categoreyMaker(label), StonkCompanionClient.df1.format(compressed_bid_price), currency_str, bid_hyper_amount, hyper_str, StonkCompanionClient.df1.format(compressed_bid_price%64), currency_str);
 				fairprice_gui_msg = String.format("Fair Stonk Price: %s %s", StonkCompanionClient.df1.format(compressed_bid_price), currency_str);
 			}
 		}
