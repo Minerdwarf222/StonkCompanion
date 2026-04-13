@@ -15,8 +15,10 @@ import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.stonkcompanion.main.Barrel;
@@ -314,6 +316,34 @@ public class HandledScreenMixin {
 		
 		StonkCompanionClient.open_barrel_time = 0;
 		StonkCompanionClient.open_barrel_values = "";
+	}
+	
+	@Inject(at = @At("HEAD"), method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", cancellable = true)
+	private void stonkCompanionOnMouseClickInject(Slot slot, int slotId, int button, SlotActionType actionType, CallbackInfo ci) {
+		// Handle written books in barrel inventory like lime tess custom interaction
+		// Prevent book from opening and treat as normal item interaction
+		if(button != 1) return; // Only intercept right-click
+		if(actionType != SlotActionType.PICKUP) return;
+		if(!StonkCompanionClient.anti_monu) return;
+		if(StonkCompanionClient.anti_monu_is_not_barrel) return;
+		if(StonkCompanionClient.last_right_click == null) return;
+		
+		MinecraftClient mc = MinecraftClient.getInstance();
+		if(mc.player == null) return;
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click) == null) return;
+		if(mc.player.getWorld().getBlockEntity(StonkCompanionClient.last_right_click).getType() != BlockEntityType.BARREL) return;
+		
+		// Check if the slot contains a written book
+		if(slot == null || !slot.hasStack()) return;
+		
+		ItemStack stack = slot.getStack();
+		if(stack.getItem() != Items.WRITTEN_BOOK) return;
+		
+		// Cancel to prevent book from opening, then manually trigger slot interaction
+		ci.cancel();
+		
+		// Trigger the slot interaction manually
+		mc.interactionManager.clickSlot(mc.player.currentScreenHandler.syncId, slotId, button, actionType, mc.player);
 	}
 	
 }
