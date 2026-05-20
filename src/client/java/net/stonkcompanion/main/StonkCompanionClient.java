@@ -79,7 +79,7 @@ public class StonkCompanionClient implements ClientModInitializer{
 	private static String top_dir = FabricLoader.getInstance().getConfigDir().resolve("StonkCompanion").toString();
 	
 	// Versioning:
-	public static final String current_mod_version = "v0.1.2";
+	public static final String current_mod_version = "v0.1.3";
 	public static String latest_mod_version = "";
 	public static String mininum_mod_version = "";
 	public static boolean is_stopping_mistrade_dect = false;
@@ -1019,7 +1019,10 @@ public class StonkCompanionClient implements ClientModInitializer{
 			
 			String raw_msg = message.toString();
 			
-			if(!((raw_msg.contains("§c-") || raw_msg.contains("§a+")) && (raw_msg.contains("added")||raw_msg.contains("removed")) && !raw_msg.contains("-----") && !raw_msg.contains("§m"))) {
+			// Coreprotect messages are of the form:
+			// (Time: 31.40/m) ago (§c-/§a+) (username)§f (action) x(#) (item)§f
+
+			if(!raw_msg.endsWith("literal{§f.}]]") || !((raw_msg.contains("§c-") || raw_msg.contains("§a+")) && !raw_msg.contains("§m"))) {
 				return message;
 			}
 			

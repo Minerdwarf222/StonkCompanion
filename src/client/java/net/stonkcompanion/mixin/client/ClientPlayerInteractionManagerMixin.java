@@ -151,7 +151,13 @@ public class ClientPlayerInteractionManagerMixin {
 			
 			Item player_item = player_itemstk.getItem();
 			int player_itemstk_qty = player_itemstk.getCount();
+			Item active_slot_item = active_slot.getItem();
 			int item_qty_taken = 0;
+			
+			// If active_slot is not Empty and not Same as cursor then ignore.
+			if(!active_slot.isEmpty() && !player_itemstk.isEmpty() && !ItemStack.areItemsEqual(player_itemstk, active_slot)) {
+				return;
+			}
 			
 			String player_item_name = getItemName(player_itemstk);
 			
@@ -425,6 +431,9 @@ public class ClientPlayerInteractionManagerMixin {
 							
 							onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, false, list_of_items);	
 						}
+					}else if(active_slot.getItem() == Items.WRITTEN_BOOK) {
+						// Early return if it is a written book, since monu opens the book if you right click it.
+						return;
 					}else {	
 						
 						if (item_qty_taken != 0) {
