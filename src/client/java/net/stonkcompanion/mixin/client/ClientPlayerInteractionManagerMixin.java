@@ -9,6 +9,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
@@ -17,6 +19,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
@@ -435,7 +439,10 @@ public class ClientPlayerInteractionManagerMixin {
 							onClickInjectHelper(barrel_pos, active_slot_item_name, item_qty_taken, false, list_of_items);	
 						}
 					}else if(active_slot.getItem() == Items.WRITTEN_BOOK) {
-						// Early return if it is a written book, since monu opens the book if you right click it.
+						// Early return if it is a written book, since monu opens the book if you right click it.											
+						return;
+					}else if(Block.getBlockFromItem(active_slot_item).getDefaultState().isIn(BlockTags.SHULKER_BOXES) && active_slot_item_name.startsWith("Carrier")) {
+						// Early return if it is a carrier shulker, since monu just ignores those being right clicked.
 						return;
 					}else {	
 						
@@ -628,8 +635,20 @@ public class ClientPlayerInteractionManagerMixin {
 	// Given an item it returns the item name.
 	private String getItemName(ItemStack given_item) {
 		
-		if(given_item.getNbt() == null || !given_item.getNbt().contains("Monumenta")) {
-			return given_item.getItem().getTranslationKey().substring(given_item.getItem().getTranslationKey().lastIndexOf('.')+1);
+		String translation_key = given_item.getItem().getTranslationKey().substring(given_item.getItem().getTranslationKey().lastIndexOf('.')+1);
+		
+		if(given_item.getNbt() == null) {
+			return translation_key;
+		} else if (!given_item.getNbt().contains("Monumenta")){
+			if(!given_item.getNbt().contains("plain")) {
+				return translation_key;
+			}
+			NbtCompound plain = given_item.getNbt().getCompound("plain");
+			
+			if(plain.contains("display") && plain.getCompound("display").contains("Name")) {
+				return plain.getCompound("display").getString("Name");
+			}
+			return translation_key;
 		}else {
 			
 			String item_name = given_item.getNbt().getCompound("plain").getCompound("display").getString("Name");
