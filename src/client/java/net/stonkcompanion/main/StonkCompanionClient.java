@@ -914,6 +914,15 @@ public class StonkCompanionClient implements ClientModInitializer{
 		
 	}
 	
+	
+	private void printTextSiblingsDEBUG(Text text, int depth) {
+		for(Text _text : text.getSiblings()) {
+			LOGGER.info(depth+" | "+_text.getString());
+			printTextSiblingsDEBUG(_text, depth+1);
+		}
+	}
+	
+	
 	// @SuppressWarnings("resource")
 	@Override
 	public void onInitializeClient() {
@@ -1036,33 +1045,26 @@ public class StonkCompanionClient implements ClientModInitializer{
 				
 				HoverEvent item_transaction = parts_of_msg.get(3).getStyle().getHoverEvent();		
 				
-				String temp_name_item = item_transaction.getValue(HoverEvent.Action.SHOW_TEXT).toString();
-
+				Text hoverevent_text = item_transaction.getValue(HoverEvent.Action.SHOW_TEXT);
+				String temp_name_item = hoverevent_text.toString();
+				
 				// written_books or writable_books have hoverevent, but it doesn't show anything? So just check if it starts with a literal anyway.
 				// Since it is either not something we care about or it is not in the expected format.
-				if (!temp_name_item.startsWith("literal{")) return message;
+				if (!temp_name_item.startsWith("literal{")) return message;	
 				
-				String backup_name_item = temp_name_item;
-				temp_name_item = temp_name_item.replace("literal{", "");
-				temp_name_item = temp_name_item.substring(0, temp_name_item.indexOf("}"));
+				String hoverevent_string = hoverevent_text.getString();
+				if(hoverevent_string.contains("\n"))
+					hoverevent_string = hoverevent_string.substring(0, hoverevent_string.indexOf('\n')).trim();
 				
-				// Hard coding this since I hate Text, and this is the only item with this issue atm I think?
-				// literal{I}[style={color=#BE93E4,bold}, siblings=[literal{nversion Aegis}[style={color=white}],
-				if(temp_name_item.equals("I")) {
-					if (backup_name_item.substring(57, 71).equals("nversion Aegis")) {
-						temp_name_item = "Inversion Aegis";
-					}
-				}
-				
-				if (temp_name_item.equals("Tesseract of Knowledge (u)")) {
-					int indx_of_anvil_count = backup_name_item.indexOf("literal{Stored anvils: }");
+				if (hoverevent_string.equals("Tesseract of Knowledge (u)")) {
+					int indx_of_anvil_count = temp_name_item.indexOf("literal{Stored anvils: }");
 					   
 					if (indx_of_anvil_count != -1) {
-						temp_name_item += " (Contains: " + backup_name_item.substring(indx_of_anvil_count+55, backup_name_item.indexOf('}', indx_of_anvil_count+55))+ " Anvils)";
+						hoverevent_string += " (Contains: " + temp_name_item.substring(indx_of_anvil_count+55, temp_name_item.indexOf('}', indx_of_anvil_count+55))+ " Anvils)";
 					}
 				}				
 				   
-				name_item = temp_name_item;
+				name_item = hoverevent_string;
 				
 				// I hate minecraft Text and I hate how seemingly hard it is to find help.
 				
