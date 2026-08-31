@@ -268,7 +268,12 @@ public class HandledScreenMixin {
 				StonkCompanionClient.LOGGER.warn("Close: " + item_name);
 				StonkCompanionClient.LOGGER.warn("Close: " + item.getItem().getTranslationKey());*/
 			}else {
-				item_name = item.getNbt().getCompound("plain").getCompound("display").getString("Name");				
+				item_name = item.getNbt().getCompound("plain").getCompound("display").getString("Name");	
+				
+				if (item_name.equals("Tesseract of Knowledge (u)")) {
+					item_name += " | " +item.getNbt().getCompound("Monumenta").getCompound("PlayerModified").getInt("Charges");
+				}
+				
 			}
 			
 			if (barrel_inventory.has(item_name)){

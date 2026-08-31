@@ -409,6 +409,9 @@ public class ClientPlayerInteractionManagerMixin {
 				//			If a different item is in the cursor slot then the two slots are swapped.
 				//			If the same item is in the cursor slot then 1 is taken from cursor slot and put into inventory slot until inventory slot hits stack size.
 				//			If nothing is in active slot then 1 is taken from cursor slot and put into inventory slot.
+				// (1781654738, "Orange 2", Not Player, 23, 1, PICKUP, 8 "ender_eye", 17 "ender_eye")
+				// (1781654738, "Orange 2", 1, "Beastly Brood")
+				// (1781654738, "Orange 2", 1, "Beastly Brood")
 				
 				Item active_slot_item = active_slot.getItem();
 				int active_slot_itemstk_qty = active_slot.getCount();
